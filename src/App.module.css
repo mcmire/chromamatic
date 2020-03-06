@@ -1,0 +1,31 @@
+.swatches {
+  margin-bottom: 1em;
+}
+
+.swatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fieldset {
+  border: none;
+  padding: 0;
+  margin: 0;
+}
+
+.label {
+  font-weight: bold;
+  padding-right: 5px;
+}
+
+.inputGroup {
+  display: inline-block;
+  padding-right: 10px;
+}
+
+.textField {
+  font-family: inherit;
+  font-size: inherit;
+  width: 3rem;
+}
