@@ -14,8 +14,13 @@ _.mixin({
   }
 });
 
-const colorSpaceNames = ["rgb", "hsl", "lab"];
+const colorSpaceNames = [
+  //"rgb",
+  "hsl"
+  //"lab"
+];
 const colorSpacesByName = {
+  /*
   rgb: {
     name: "rgb",
     components: [
@@ -23,7 +28,8 @@ const colorSpacesByName = {
       { name: "g", step: 1, min: 0, max: 255 },
       { name: "b", step: 1, min: 0, max: 255 }
     ]
-  },
+  }
+  */
   hsl: {
     name: "hsl",
     components: [
@@ -31,7 +37,8 @@ const colorSpacesByName = {
       { name: "s", step: 0.1, min: 0, max: 1 },
       { name: "l", step: 0.1, min: 0, max: 1 }
     ]
-  },
+  }
+  /*
   lab: {
     name: "lab",
     components: [
@@ -40,26 +47,33 @@ const colorSpacesByName = {
       { name: "b", step: 0.1, min: 0, max: 1 }
     ]
   }
+  */
 };
 
 function roundNumber(number) {
   return Math.round(number * 1000) / 1000;
 }
 
+function buildChroma(colorSpace, color) {
+  console.log(`chroma(${JSON.stringify(color)})`);
+  return chroma(color);
+}
+
 class WrappedColor {
   constructor(colorSpace, color) {
     this.colorSpace = colorSpace;
     this.color = color;
-    this.code = color.hex();
-    this.textColor = color.luminance() >= 0.5 ? "black" : "white";
+    this.chroma = buildChroma(colorSpace, color);
+    this.code = this.chroma.hex();
+    this.textColor = this.chroma.luminance() >= 0.5 ? "black" : "white";
   }
 
   get name() {
     if (this.colorSpace.name === "rgb" || this.colorSpace.name === "hsl") {
-      return this.color.css(this.colorSpace.name);
+      return this.chroma.css(this.colorSpace.name);
     } else {
       const values = this.colorSpace.components.map(component => {
-        const number = this.color.get(
+        const number = this.chroma.get(
           `${this.colorSpace.name}.${component.name}`
         );
         return roundNumber(number);
@@ -75,7 +89,7 @@ function TripletTextField({ colorSpace, color, component, onColorUpdated }) {
     onColorUpdated(colorSpace, component, input.value);
   }
 
-  const number = color.get(`${colorSpace.name}.${component.name}`);
+  const number = _.fetch(color, component.name);
   const value = isNaN(number) ? "0" : number.toString();
 
   return (
@@ -152,9 +166,13 @@ function Swatches({ colorsByColorSpaceName }) {
 }
 
 function App() {
-  const initialState = Object.keys(colorSpacesByName).reduce(
-    (obj, colorSpaceName) => {
-      return { ...obj, [colorSpaceName]: chroma(0, 0, 0, colorSpaceName) };
+  const initialState = _.reduce(
+    colorSpacesByName,
+    (obj, colorSpace, colorSpaceName) => {
+      const color = colorSpace.components.reduce((obj2, component) => {
+        return { ...obj2, [component.name]: 0 };
+      }, {});
+      return { ...obj, [colorSpaceName]: color };
     },
     {}
   );
@@ -162,38 +180,46 @@ function App() {
     initialState
   );
 
-  function onColorUpdated(colorSpace, component, value) {
-    const allColorSpaceNamesExceptOneBeingUpdated = _.difference(
+  function onColorUpdated(selectedColorSpace, selectedComponent, newValue) {
+    const unselectedColorSpaceNames = _.difference(
       Object.keys(colorsByColorSpaceName),
-      [colorSpace.name]
+      [selectedColorSpace.name]
     );
-    const existingColor = _.fetch(colorsByColorSpaceName, colorSpace.name);
-    const newColor = existingColor.set(
-      `${colorSpace.name}.${component.name}`,
-      value
+    const selectedColor = _.fetch(
+      colorsByColorSpaceName,
+      selectedColorSpace.name
     );
-    /*
+    const newSelectedColor = {
+      ...selectedColor,
+      [selectedComponent.name]: newValue
+    };
+    const newSelectedChroma = buildChroma(selectedColorSpace, newSelectedColor);
     console.log(
-      "colorSpace",
-      colorSpace.name,
-      "component",
-      component.name,
-      "existingColor",
-      existingColor,
-      "newColor",
-      newColor,
-      "value",
-      value
+      "newSelectedColor",
+      newSelectedColor,
+      "newSelectedChroma",
+      newSelectedChroma[selectedColorSpace.name]()
     );
-    */
-    const newColorsByColorSpaceName = allColorSpaceNamesExceptOneBeingUpdated.reduce(
-      (obj, colorSpaceName) => {
-        const newConvertedColor = chroma[colorSpaceName](
-          ...newColor[colorSpaceName]()
+    const newColorsByColorSpaceName = unselectedColorSpaceNames.reduce(
+      (obj, unselectedColorSpaceName) => {
+        const unselectedColorSpace = _.fetch(
+          colorSpacesByName,
+          unselectedColorSpaceName
         );
-        return { ...obj, [colorSpaceName]: newConvertedColor };
+        const newUnselectedColor = unselectedColorSpace.components.reduce(
+          (obj, component) => {
+            return {
+              ...obj,
+              [component.name]: newSelectedChroma.get(
+                `${unselectedColorSpaceName}.${component.name}`
+              )
+            };
+          },
+          {}
+        );
+        return { ...obj, [unselectedColorSpaceName]: newUnselectedColor };
       },
-      { [colorSpace.name]: newColor }
+      { [selectedColorSpace.name]: newSelectedColor }
     );
     setColorsByColorSpace(newColorsByColorSpaceName);
   }
