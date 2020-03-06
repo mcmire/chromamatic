@@ -14,10 +14,37 @@ _.mixin({
   }
 });
 
+const colorSpaceNames = ["rgb", "hsl", "lab"];
 const colorSpacesByName = {
-  rgb: { name: "rgb", components: ["r", "g", "b"] },
-  hsl: { name: "hsl", components: ["h", "s", "l"] }
+  rgb: {
+    name: "rgb",
+    components: [
+      { name: "r", step: 1, min: 0, max: 255 },
+      { name: "g", step: 1, min: 0, max: 255 },
+      { name: "b", step: 1, min: 0, max: 255 }
+    ]
+  },
+  hsl: {
+    name: "hsl",
+    components: [
+      { name: "h", step: 0.1, min: 0, max: 1 },
+      { name: "s", step: 0.1, min: 0, max: 1 },
+      { name: "l", step: 0.1, min: 0, max: 1 }
+    ]
+  },
+  lab: {
+    name: "lab",
+    components: [
+      { name: "l", step: 0.1, min: 0, max: 1 },
+      { name: "a", step: 0.1, min: 0, max: 1 },
+      { name: "b", step: 0.1, min: 0, max: 1 }
+    ]
+  }
 };
+
+function roundNumber(number) {
+  return Math.round(number * 1000) / 1000;
+}
 
 class WrappedColor {
   constructor(colorSpace, color) {
@@ -31,9 +58,12 @@ class WrappedColor {
     if (this.colorSpace.name === "rgb" || this.colorSpace.name === "hsl") {
       return this.color.css(this.colorSpace.name);
     } else {
-      const values = this.colorSpace.components.map(component =>
-        this.color.get(`${this.colorSpace}.${component}`)
-      );
+      const values = this.colorSpace.components.map(component => {
+        const number = this.color.get(
+          `${this.colorSpace.name}.${component.name}`
+        );
+        return roundNumber(number);
+      });
       return `${this.colorSpace.name}(${values.join(",")})`;
     }
   }
@@ -42,17 +72,19 @@ class WrappedColor {
 function TripletTextField({ colorSpace, color, component, onColorUpdated }) {
   function onChange(event) {
     const input = event.target;
-    console.log("Color updated", colorSpace, component, input.value);
     onColorUpdated(colorSpace, component, input.value);
   }
 
-  const number = color.get(`${colorSpace.name}.${component}`);
+  const number = color.get(`${colorSpace.name}.${component.name}`);
   const value = isNaN(number) ? "0" : number.toString();
 
   return (
     <input
       className={styles.textField}
       type="number"
+      step={component.step}
+      min={component.min}
+      max={component.max}
       value={value}
       onChange={onChange}
     />
@@ -67,7 +99,7 @@ function TripletTextFieldGroup({
 }) {
   return (
     <fieldset className={`${styles.fieldset} ${styles.labeledInput}`}>
-      <label className={styles.label}>{component.toUpperCase()}</label>
+      <label className={styles.label}>{component.name.toUpperCase()}</label>
       <TripletTextField
         colorSpace={colorSpace}
         color={color}
@@ -133,29 +165,45 @@ function App() {
   function onColorUpdated(colorSpace, component, value) {
     const allColorSpaceNamesExceptOneBeingUpdated = _.difference(
       Object.keys(colorsByColorSpaceName),
-      colorSpace
+      [colorSpace.name]
     );
-    const newColor = _.fetch(colorsByColorSpaceName, colorSpace.name).set(
-      `${colorSpace.name}.${component}`,
+    const existingColor = _.fetch(colorsByColorSpaceName, colorSpace.name);
+    const newColor = existingColor.set(
+      `${colorSpace.name}.${component.name}`,
       value
     );
-    const newColorsByColorSpace = allColorSpaceNamesExceptOneBeingUpdated.reduce(
+    /*
+    console.log(
+      "colorSpace",
+      colorSpace.name,
+      "component",
+      component.name,
+      "existingColor",
+      existingColor,
+      "newColor",
+      newColor,
+      "value",
+      value
+    );
+    */
+    const newColorsByColorSpaceName = allColorSpaceNamesExceptOneBeingUpdated.reduce(
       (obj, colorSpaceName) => {
         const newConvertedColor = chroma[colorSpaceName](
           ...newColor[colorSpaceName]()
         );
         return { ...obj, [colorSpaceName]: newConvertedColor };
       },
-      { [colorSpace]: newColor }
+      { [colorSpace.name]: newColor }
     );
-    setColorsByColorSpace(newColorsByColorSpace);
+    setColorsByColorSpace(newColorsByColorSpaceName);
   }
 
-  const colorFields = _.map(colorsByColorSpaceName, (color, colorSpaceName) => {
+  const colorFields = colorSpaceNames.map((colorSpaceName, index) => {
+    const color = _.fetch(colorsByColorSpaceName, colorSpaceName);
     const colorSpace = _.fetch(colorSpacesByName, colorSpaceName);
     return (
       <ColorFields
-        key={colorSpaceName}
+        key={index}
         colorSpace={colorSpace}
         color={color}
         onColorUpdated={onColorUpdated}
