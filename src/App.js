@@ -14,33 +14,46 @@ _.mixin({
   }
 });
 
-const colorSpaceComponentsByColorSpace = {
-  rgb: [
-    { prop: "r", label: "R" },
-    { prop: "g", label: "G" },
-    { prop: "b", label: "B" }
-  ]
+const colorSpacesByName = {
+  rgb: { name: "rgb", components: ["r", "g", "b"] },
+  hsl: { name: "hsl", components: ["h", "s", "l"] }
 };
 
 class WrappedColor {
-  constructor(color) {
+  constructor(colorSpace, color) {
+    this.colorSpace = colorSpace;
+    this.color = color;
     this.code = color.hex();
-    this.name = this.code;
     this.textColor = color.luminance() >= 0.5 ? "black" : "white";
+  }
+
+  get name() {
+    if (this.colorSpace.name === "rgb" || this.colorSpace.name === "hsl") {
+      return this.color.css(this.colorSpace.name);
+    } else {
+      const values = this.colorSpace.components.map(component =>
+        this.color.get(`${this.colorSpace}.${component}`)
+      );
+      return `${this.colorSpace.name}(${values.join(",")})`;
+    }
   }
 }
 
 function TripletTextField({ colorSpace, color, component, onColorUpdated }) {
   function onChange(event) {
     const input = event.target;
-    console.log("Color updated", colorSpace, component.prop, input.value);
-    onColorUpdated(colorSpace, component.prop, input.value);
+    console.log("Color updated", colorSpace, component, input.value);
+    onColorUpdated(colorSpace, component, input.value);
   }
+
+  const number = color.get(`${colorSpace.name}.${component}`);
+  const value = isNaN(number) ? "0" : number.toString();
+
   return (
     <input
       className={styles.textField}
       type="number"
-      value={color.get(`${colorSpace}.${component.prop}`)}
+      value={value}
       onChange={onChange}
     />
   );
@@ -53,8 +66,8 @@ function TripletTextFieldGroup({
   onColorUpdated
 }) {
   return (
-    <fieldset className={`${styles.fieldset} ${styles.inputGroup}`}>
-      <label className={styles.label}>{component.label}</label>
+    <fieldset className={`${styles.fieldset} ${styles.labeledInput}`}>
+      <label className={styles.label}>{component.toUpperCase()}</label>
       <TripletTextField
         colorSpace={colorSpace}
         color={color}
@@ -66,8 +79,7 @@ function TripletTextFieldGroup({
 }
 
 function ColorFields({ colorSpace, color, onColorUpdated }) {
-  const components = _.fetch(colorSpaceComponentsByColorSpace, colorSpace);
-  const content = components.map((component, index) => (
+  const content = colorSpace.components.map((component, index) => (
     <TripletTextFieldGroup
       key={index}
       colorSpace={colorSpace}
@@ -77,64 +89,83 @@ function ColorFields({ colorSpace, color, onColorUpdated }) {
     />
   ));
 
-  return <fieldset className={styles.fieldset}>{content}</fieldset>;
+  return (
+    <fieldset className={`${styles.fieldset} ${styles.triplet}`}>
+      {content}
+    </fieldset>
+  );
+}
+
+function Swatch({ colorSpace, color }) {
+  const wrappedColor = new WrappedColor(colorSpace, color);
+  return (
+    <div
+      className={styles.swatch}
+      style={{ backgroundColor: wrappedColor.code }}
+    >
+      <span style={{ color: wrappedColor.textColor }}>{wrappedColor.name}</span>
+    </div>
+  );
+}
+
+function Swatches({ colorsByColorSpaceName }) {
+  const content = _.map(colorsByColorSpaceName, (color, colorSpaceName) => {
+    const colorSpace = _.fetch(colorSpacesByName, colorSpaceName);
+    return (
+      <Swatch key={colorSpaceName} colorSpace={colorSpace} color={color} />
+    );
+  });
+
+  return <div className={styles.swatches}>{content}</div>;
 }
 
 function App() {
-  const [colorsByColorSpace, setColorsByColorSpace] = useState({
-    rgb: chroma("black")
-  });
+  const initialState = Object.keys(colorSpacesByName).reduce(
+    (obj, colorSpaceName) => {
+      return { ...obj, [colorSpaceName]: chroma(0, 0, 0, colorSpaceName) };
+    },
+    {}
+  );
+  const [colorsByColorSpaceName, setColorsByColorSpace] = useState(
+    initialState
+  );
 
   function onColorUpdated(colorSpace, component, value) {
-    const allColorSpaceExceptUpdating = _.difference(
-      Object.keys(colorsByColorSpace),
+    const allColorSpaceNamesExceptOneBeingUpdated = _.difference(
+      Object.keys(colorsByColorSpaceName),
       colorSpace
     );
-    const newColor = _.fetch(colorsByColorSpace, colorSpace).set(
-      `${colorSpace}.${component}`,
+    const newColor = _.fetch(colorsByColorSpaceName, colorSpace.name).set(
+      `${colorSpace.name}.${component}`,
       value
     );
-    const newColorsByColorSpace = allColorSpaceExceptUpdating.reduce(
-      (obj, colorSpace) => {
-        const newConvertedColor = chroma[colorSpace](...newColor[colorSpace]());
-        return { ...obj, [colorSpace]: newConvertedColor };
+    const newColorsByColorSpace = allColorSpaceNamesExceptOneBeingUpdated.reduce(
+      (obj, colorSpaceName) => {
+        const newConvertedColor = chroma[colorSpaceName](
+          ...newColor[colorSpaceName]()
+        );
+        return { ...obj, [colorSpaceName]: newConvertedColor };
       },
       { [colorSpace]: newColor }
     );
     setColorsByColorSpace(newColorsByColorSpace);
   }
 
-  const colorFields = _.map(colorsByColorSpace, (color, colorSpace) => (
-    <ColorFields
-      key={colorSpace}
-      colorSpace={colorSpace}
-      color={color}
-      onColorUpdated={onColorUpdated}
-    />
-  ));
+  const colorFields = _.map(colorsByColorSpaceName, (color, colorSpaceName) => {
+    const colorSpace = _.fetch(colorSpacesByName, colorSpaceName);
+    return (
+      <ColorFields
+        key={colorSpaceName}
+        colorSpace={colorSpace}
+        color={color}
+        onColorUpdated={onColorUpdated}
+      />
+    );
+  });
 
   return (
     <>
-      <div className={styles.swatches}>
-        {Object.values(colorsByColorSpace).map(color => {
-          const wrappedColor = new WrappedColor(color);
-          return (
-            <div
-              className={styles.swatch}
-              style={{
-                backgroundColor: wrappedColor.code,
-                width: "100px",
-                height: "100px"
-              }}
-            >
-              <span style={{ color: wrappedColor.textColor }}>
-                {wrappedColor.name}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-
+      <Swatches colorsByColorSpaceName={colorsByColorSpaceName} />
       <form>{colorFields}</form>
     </>
   );
