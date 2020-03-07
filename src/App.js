@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import _ from "lodash";
-import chroma from "chroma-js";
+import Color from "color";
 
 import styles from "./App.module.css";
 
@@ -14,13 +14,8 @@ _.mixin({
   }
 });
 
-const colorSpaceNames = [
-  //"rgb",
-  "hsl"
-  //"lab"
-];
+const colorSpaceNames = ["rgb", "hsl", "lab", "hex"];
 const colorSpacesByName = {
-  /*
   rgb: {
     name: "rgb",
     components: [
@@ -28,57 +23,108 @@ const colorSpacesByName = {
       { name: "g", step: 1, min: 0, max: 255 },
       { name: "b", step: 1, min: 0, max: 255 }
     ]
-  }
-  */
+  },
   hsl: {
     name: "hsl",
     components: [
-      { name: "h", step: 0.1, min: 0, max: 1 },
-      { name: "s", step: 0.1, min: 0, max: 1 },
-      { name: "l", step: 0.1, min: 0, max: 1 }
+      { name: "h", step: 1, min: 0, max: 360, suffix: "°" },
+      { name: "s", step: 0.5, min: 0, max: 100, suffix: "%" },
+      { name: "l", step: 0.5, min: 0, max: 100, suffix: "%" }
     ]
-  }
-  /*
+  },
   lab: {
     name: "lab",
     components: [
-      { name: "l", step: 0.1, min: 0, max: 1 },
-      { name: "a", step: 0.1, min: 0, max: 1 },
-      { name: "b", step: 0.1, min: 0, max: 1 }
+      { name: "l", step: 1, min: 0, max: 100 },
+      { name: "a", step: 0.5 },
+      { name: "b", step: 0.5 }
     ]
+  },
+  hex: {
+    name: "hex",
+    components: []
   }
-  */
 };
 
 function roundNumber(number) {
   return Math.round(number * 1000) / 1000;
 }
 
-function buildChroma(colorSpace, color) {
-  console.log(`chroma(${JSON.stringify(color)})`);
-  return chroma(color);
+function buildFormalColor(color) {
+  return Color(color);
+}
+
+function Swatch({ colorsByColorSpaceName }) {
+  const wrappedColorsByColorSpaceName = _.reduce(
+    colorsByColorSpaceName,
+    (obj, color, colorSpaceName) => {
+      const colorSpace = _.fetch(colorSpacesByName, colorSpaceName);
+      const wrappedColor = new WrappedColor(colorSpace, color);
+      return { ...obj, [colorSpaceName]: wrappedColor };
+    },
+    {}
+  );
+
+  const content = colorSpaceNames.map(colorSpaceName => {
+    const wrappedColor = _.fetch(wrappedColorsByColorSpaceName, colorSpaceName);
+    return (
+      <div key={colorSpaceName} style={{ color: wrappedColor.textColor }}>
+        {wrappedColor.name}
+      </div>
+    );
+  });
+
+  const defaultWrappedColor = _.fetch(wrappedColorsByColorSpaceName, "rgb");
+
+  return (
+    <div
+      className={styles.swatch}
+      style={{ backgroundColor: defaultWrappedColor.code }}
+    >
+      <div className={styles.swatchContent}>{content}</div>
+    </div>
+  );
 }
 
 class WrappedColor {
   constructor(colorSpace, color) {
     this.colorSpace = colorSpace;
     this.color = color;
-    this.chroma = buildChroma(colorSpace, color);
-    this.code = this.chroma.hex();
-    this.textColor = this.chroma.luminance() >= 0.5 ? "black" : "white";
+
+    try {
+      this.formalColor = buildFormalColor(color);
+      this.code = this.formalColor.hex();
+      this.hex = this.code;
+      this.textColor = this.formalColor.luminosity() >= 0.5 ? "black" : "white";
+    } catch (e) {
+      if (/Unable to parse color/.test(e.message)) {
+        // don't worry about it
+        this.code = this.color;
+        this.hex = this.color;
+        this.textColor = "red";
+      } else {
+        throw e;
+      }
+    }
   }
 
   get name() {
-    if (this.colorSpace.name === "rgb" || this.colorSpace.name === "hsl") {
-      return this.chroma.css(this.colorSpace.name);
+    if (this.formalColor) {
+      if (this.colorSpace.name === "rgb" || this.colorSpace.name === "hsl") {
+        return this.formalColor.string(3);
+      } else if (this.colorSpace.name === "hex") {
+        return this.hex;
+      } else {
+        const values = this.colorSpace.components.map(component => {
+          const number = this.formalColor[component.name]();
+          return roundNumber(number);
+        });
+        return `${this.colorSpace.name}(${values.join(",")})`;
+      }
+    } else if (typeof this.color === "string") {
+      return this.color;
     } else {
-      const values = this.colorSpace.components.map(component => {
-        const number = this.chroma.get(
-          `${this.colorSpace.name}.${component.name}`
-        );
-        return roundNumber(number);
-      });
-      return `${this.colorSpace.name}(${values.join(",")})`;
+      return "(invalid color)";
     }
   }
 }
@@ -90,18 +136,30 @@ function TripletTextField({ colorSpace, color, component, onColorUpdated }) {
   }
 
   const number = _.fetch(color, component.name);
-  const value = isNaN(number) ? "0" : number.toString();
+  const value = isNaN(number) ? "0" : roundNumber(number.toString());
+
+  const extraProps = {};
+
+  if ("min" in component) {
+    extraProps.min = component.min;
+  }
+
+  if ("max" in component) {
+    extraProps.max = component.max;
+  }
 
   return (
-    <input
-      className={styles.textField}
-      type="number"
-      step={component.step}
-      min={component.min}
-      max={component.max}
-      value={value}
-      onChange={onChange}
-    />
+    <>
+      <input
+        className={styles.textField}
+        type="number"
+        step={component.step}
+        value={value}
+        onChange={onChange}
+        {...extraProps}
+      />
+      {"suffix" in component ? component.suffix : <>&nbsp;</>}
+    </>
   );
 }
 
@@ -142,49 +200,59 @@ function ColorFields({ colorSpace, color, onColorUpdated }) {
   );
 }
 
-function Swatch({ colorSpace, color }) {
-  const wrappedColor = new WrappedColor(colorSpace, color);
-  return (
-    <div
-      className={styles.swatch}
-      style={{ backgroundColor: wrappedColor.code }}
-    >
-      <span style={{ color: wrappedColor.textColor }}>{wrappedColor.name}</span>
-    </div>
+function HexColorField({ colorsByColorSpaceName, onColorUpdated }) {
+  function onChange(event) {
+    const input = event.target;
+    onColorUpdated(input.value);
+  }
+
+  const wrappedColorsByColorSpaceName = _.reduce(
+    colorsByColorSpaceName,
+    (obj, color, colorSpaceName) => {
+      const colorSpace = _.fetch(colorSpacesByName, colorSpaceName);
+      const wrappedColor = new WrappedColor(colorSpace, color);
+      return { ...obj, [colorSpaceName]: wrappedColor };
+    },
+    {}
   );
-}
+  const wrappedColor = _.fetch(wrappedColorsByColorSpaceName, "hex");
 
-function Swatches({ colorsByColorSpaceName }) {
-  const content = _.map(colorsByColorSpaceName, (color, colorSpaceName) => {
-    const colorSpace = _.fetch(colorSpacesByName, colorSpaceName);
-    return (
-      <Swatch key={colorSpaceName} colorSpace={colorSpace} color={color} />
-    );
-  });
-
-  return <div className={styles.swatches}>{content}</div>;
+  return (
+    <fieldset className={`${styles.fieldset} ${styles.triplet}`}>
+      <label className={styles.label}>Hex</label>
+      <input
+        className={`${styles.textField} ${styles.hexColorField}`}
+        type="text"
+        value={wrappedColor.color}
+        onChange={onChange}
+      />
+    </fieldset>
+  );
 }
 
 function App() {
   const initialState = _.reduce(
     colorSpacesByName,
     (obj, colorSpace, colorSpaceName) => {
-      const color = colorSpace.components.reduce((obj2, component) => {
-        return { ...obj2, [component.name]: 0 };
-      }, {});
+      const color =
+        colorSpace.components.length > 0
+          ? colorSpace.components.reduce((obj2, component) => {
+              return { ...obj2, [component.name]: 0 };
+            }, {})
+          : "#000000";
       return { ...obj, [colorSpaceName]: color };
     },
     {}
   );
-  const [colorsByColorSpaceName, setColorsByColorSpace] = useState(
+  const [colorsByColorSpaceName, setColorsByColorSpaceName] = useState(
     initialState
   );
 
-  function onColorUpdated(selectedColorSpace, selectedComponent, newValue) {
-    const unselectedColorSpaceNames = _.difference(
-      Object.keys(colorsByColorSpaceName),
-      [selectedColorSpace.name]
-    );
+  function onTripletColorUpdated(
+    selectedColorSpace,
+    selectedComponent,
+    newValue
+  ) {
     const selectedColor = _.fetch(
       colorsByColorSpaceName,
       selectedColorSpace.name
@@ -193,35 +261,55 @@ function App() {
       ...selectedColor,
       [selectedComponent.name]: newValue
     };
-    const newSelectedChroma = buildChroma(selectedColorSpace, newSelectedColor);
-    console.log(
-      "newSelectedColor",
-      newSelectedColor,
-      "newSelectedChroma",
-      newSelectedChroma[selectedColorSpace.name]()
+    _onColorUpdated(newSelectedColor, selectedColorSpace);
+  }
+
+  function onHexColorUpdated(newValue) {
+    _onColorUpdated(newValue, colorSpacesByName.hex);
+  }
+
+  function _onColorUpdated(newSelectedColor, selectedColorSpace) {
+    const unselectedColorSpaceNames = _.difference(
+      Object.keys(colorsByColorSpaceName),
+      [selectedColorSpace.name]
     );
-    const newColorsByColorSpaceName = unselectedColorSpaceNames.reduce(
-      (obj, unselectedColorSpaceName) => {
-        const unselectedColorSpace = _.fetch(
-          colorSpacesByName,
-          unselectedColorSpaceName
-        );
-        const newUnselectedColor = unselectedColorSpace.components.reduce(
-          (obj, component) => {
-            return {
-              ...obj,
-              [component.name]: newSelectedChroma.get(
-                `${unselectedColorSpaceName}.${component.name}`
-              )
-            };
-          },
-          {}
-        );
-        return { ...obj, [unselectedColorSpaceName]: newUnselectedColor };
-      },
-      { [selectedColorSpace.name]: newSelectedColor }
-    );
-    setColorsByColorSpace(newColorsByColorSpaceName);
+    let newSelectedFormalColor;
+
+    try {
+      newSelectedFormalColor = buildFormalColor(newSelectedColor);
+    } catch (e) {
+      if (/Unable to parse color/.test(e.message)) {
+        // don't worry about it
+      } else {
+        throw e;
+      }
+    }
+
+    if (newSelectedFormalColor) {
+      const newColorsByColorSpaceName = unselectedColorSpaceNames.reduce(
+        (obj, unselectedColorSpaceName) => {
+          const newUnselectedFormalColor = newSelectedFormalColor[
+            unselectedColorSpaceName
+          ]();
+          const newUnselectedInformalColor =
+            typeof newUnselectedFormalColor === "string"
+              ? newUnselectedFormalColor
+              : newUnselectedFormalColor.object();
+          return {
+            ...obj,
+            [unselectedColorSpaceName]: newUnselectedInformalColor
+          };
+        },
+        { [selectedColorSpace.name]: newSelectedColor }
+      );
+      setColorsByColorSpaceName(newColorsByColorSpaceName);
+    } else {
+      console.log(`setting ${selectedColorSpace.name} to ${newSelectedColor}`);
+      setColorsByColorSpaceName({
+        ...colorsByColorSpaceName,
+        [selectedColorSpace.name]: newSelectedColor
+      });
+    }
   }
 
   const colorFields = colorSpaceNames.map((colorSpaceName, index) => {
@@ -232,15 +320,21 @@ function App() {
         key={index}
         colorSpace={colorSpace}
         color={color}
-        onColorUpdated={onColorUpdated}
+        onColorUpdated={onTripletColorUpdated}
       />
     );
   });
 
   return (
     <>
-      <Swatches colorsByColorSpaceName={colorsByColorSpaceName} />
-      <form>{colorFields}</form>
+      <Swatch colorsByColorSpaceName={colorsByColorSpaceName} />
+      <form>
+        {colorFields}
+        <HexColorField
+          colorsByColorSpaceName={colorsByColorSpaceName}
+          onColorUpdated={onHexColorUpdated}
+        />
+      </form>
     </>
   );
 }
