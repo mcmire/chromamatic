@@ -10,6 +10,10 @@
   composes: textField from "./App.css";
 }
 
+.hasErrors {
+  composes: hasErrors from "./App.css";
+}
+
 .hexColorField {
   width: 6em;
 }
