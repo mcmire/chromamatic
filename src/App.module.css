@@ -21,6 +21,13 @@
 .fieldset {
 }
 
+.representationName {
+  font-weight: bold;
+  display: inline-block;
+  width: 5em;
+  color: hsl(216, 90%, 45%);
+}
+
 .triplet {
   border: none;
   padding: 0;

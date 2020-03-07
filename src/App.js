@@ -109,6 +109,7 @@ function ColorSpaceColorFields({
 
   return (
     <fieldset className={`${styles.fieldset} ${styles.triplet}`}>
+      <span className={styles.representationName}>{representation.name}</span>
       {content}
     </fieldset>
   );
@@ -126,7 +127,7 @@ function HexColorField({ color, onColorFieldChange, onColorFieldBlur }) {
 
   return (
     <fieldset className={`${styles.fieldset} ${styles.triplet}`}>
-      <label className={styles.label}>Hex</label>
+      <label className={styles.representationName}>hex</label>
       <input
         className={className}
         type="text"
