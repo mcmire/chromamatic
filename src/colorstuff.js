@@ -58,7 +58,7 @@ class Representation {
   }
 
   stringifyColor(color) {
-    return colorStringify(parseColor(color.rgb().toPlainObject()), this.name);
+    return colorStringify(parseColor(color.toPlainObject()), this.name);
   }
 }
 
@@ -318,7 +318,7 @@ class ColorInColorSpace extends Color {
 
   hex() {
     const hex = colorRepresentationsByName.fetch("hex");
-    return hex.buildColor(hex.stringifyColor(this));
+    return hex.buildColor(hex.stringifyColor(this.rgb()));
   }
 
   get(key) {
