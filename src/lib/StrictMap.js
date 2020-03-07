@@ -1,4 +1,4 @@
-import _ from "./lodash";
+import _ from "../vendor/lodash";
 
 export default class StrictMap extends Map {
   constructor(content = {}) {

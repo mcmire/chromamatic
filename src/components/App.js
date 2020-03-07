@@ -1,143 +1,15 @@
 import React, { useState } from "react";
-import _ from "./lodash";
-import colorRepresentationsByName from "./colorstuff";
-import StrictMap from "./StrictMap";
+import _ from "../vendor/lodash";
 
-import styles from "./App.module.css";
+import colorRepresentationsByName, {
+  COLOR_REPRESENTATION_NAMES
+} from "../lib/colorRepresentationsByName";
+import StrictMap from "../lib/StrictMap";
+import ColorSpaceColorFields from "./ColorSpaceColorFields";
+import HexColorField from "./HexColorField";
+import Swatch from "./Swatch";
 
-const COLOR_REPRESENTATION_NAMES = ["rgb", "hsl", "hsluv", "hex"];
-
-function Swatch({ colorsByRepresentationName, lastColorUpdated }) {
-  const content = COLOR_REPRESENTATION_NAMES.map(representationName => {
-    const color = colorsByRepresentationName.fetch(representationName);
-    return <div key={representationName}>{color.name}</div>;
-  });
-
-  return (
-    <div
-      className={styles.swatch}
-      style={{
-        backgroundColor: lastColorUpdated.hex().string,
-        color: lastColorUpdated.textColor
-      }}
-    >
-      <div className={styles.swatchContent}>{content}</div>
-    </div>
-  );
-}
-
-function TripletTextField({
-  representation,
-  color,
-  component,
-  onColorFieldChange,
-  onColorFieldBlur
-}) {
-  function onChange(event) {
-    const input = event.target;
-    onColorFieldChange(representation, component, parseFloat(input.value, 10));
-  }
-
-  const classes = [styles.textField];
-  if (color.hasErrorsOn(component.name)) {
-    classes.push(styles.textField);
-  }
-
-  const extraProps = {};
-  if ("min" in component) {
-    extraProps.min = component.min;
-  }
-  if ("max" in component) {
-    extraProps.max = component.max;
-  }
-
-  const suffix = component.suffix != null ? component.suffix : <>&nbsp;</>;
-
-  return (
-    <>
-      <input
-        className={classes.join(" ")}
-        type="number"
-        step={component.step}
-        value={color.get(component.name)}
-        onChange={onChange}
-        onBlur={onColorFieldBlur}
-        {...extraProps}
-      />
-      <span className={styles.suffix}>{suffix}</span>
-    </>
-  );
-}
-
-function TripletTextFieldGroup({
-  representation,
-  color,
-  component,
-  onColorFieldChange,
-  onColorFieldBlur
-}) {
-  return (
-    <fieldset className={`${styles.fieldset} ${styles.labeledInput}`}>
-      <label className={styles.label}>{component.name.toUpperCase()}</label>
-      <TripletTextField
-        representation={representation}
-        color={color}
-        component={component}
-        onColorFieldChange={onColorFieldChange}
-        onColorFieldBlur={onColorFieldBlur}
-      />
-    </fieldset>
-  );
-}
-
-function ColorSpaceColorFields({
-  representation,
-  color,
-  onColorFieldChange,
-  onColorFieldBlur
-}) {
-  const content = representation.components.map((component, index) => (
-    <TripletTextFieldGroup
-      key={index}
-      representation={representation}
-      color={color}
-      component={component}
-      onColorFieldChange={onColorFieldChange}
-      onColorFieldBlur={onColorFieldBlur}
-    />
-  ));
-
-  return (
-    <fieldset className={`${styles.fieldset} ${styles.triplet}`}>
-      <span className={styles.representationName}>{representation.name}</span>
-      {content}
-    </fieldset>
-  );
-}
-
-function HexColorField({ color, onColorFieldChange, onColorFieldBlur }) {
-  function onChange(event) {
-    const input = event.target;
-    onColorFieldChange(input.value);
-  }
-
-  let className = color.isValid()
-    ? `${styles.textField} ${styles.hexColorField}`
-    : `${styles.textField} ${styles.hexColorField} ${styles.hasErrors}`;
-
-  return (
-    <fieldset className={`${styles.fieldset} ${styles.triplet}`}>
-      <label className={styles.representationName}>hex</label>
-      <input
-        className={className}
-        type="text"
-        value={color.data}
-        onChange={onChange}
-        onBlur={onColorFieldBlur}
-      />
-    </fieldset>
-  );
-}
+//import styles from "./App.module.css";
 
 function App() {
   const initialState = colorRepresentationsByName.reduce(
