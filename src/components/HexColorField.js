@@ -1,6 +1,6 @@
 import React from "react";
 
-import styles from "./HexColorField.module.css";
+import styles from "./HexColorField.css";
 
 export default function HexColorField({
   color,

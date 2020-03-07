@@ -1,7 +1,0 @@
-.representationName {
-  composes: representationName from "./App.module.css";
-}
-
-.representationFields {
-  composes: representationFields from "./App.module.css";
-}

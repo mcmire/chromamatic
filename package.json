@@ -9,31 +9,16 @@
     "lodash": "^4.17.15",
     "react": "^16.13.0",
     "react-dom": "^16.13.0",
-    "react-scripts": "3.4.0",
     "reset.css": "^2.0.2"
   },
   "scripts": {
-    "start": "REACT_EDITOR=none react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
-  },
-  "eslintConfig": {
-    "extends": "react-app"
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+    "start": "parcel start src/index.html",
+    "build": "parcel build src/index.html"
   },
   "devDependencies": {
+    "autoprefixer": "^9.7.4",
+    "parcel": "^1.12.4",
+    "postcss-modules": "^1.5.0",
     "prettier": "^1.19.1"
   }
 }

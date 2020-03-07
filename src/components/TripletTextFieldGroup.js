@@ -2,7 +2,7 @@ import React from "react";
 
 import TripletTextField from "./TripletTextField";
 
-import styles from "./TripletTextFieldGroup.module.css";
+import styles from "./TripletTextFieldGroup.css";
 
 export default function TripletTextFieldGroup({
   representation,

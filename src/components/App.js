@@ -9,8 +9,6 @@ import ColorSpaceColorFields from "./ColorSpaceColorFields";
 import HexColorField from "./HexColorField";
 import Swatch from "./Swatch";
 
-//import styles from "./App.module.css";
-
 function App() {
   const initialState = colorRepresentationsByName.reduce(
     (map, representation, representationName) => {

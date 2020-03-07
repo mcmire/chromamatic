@@ -2,7 +2,7 @@ import React from "react";
 
 import { COLOR_REPRESENTATION_NAMES } from "../lib/colorRepresentationsByName";
 
-import styles from "./Swatch.module.css";
+import styles from "./Swatch.css";
 
 export default function Swatch({
   colorsByRepresentationName,

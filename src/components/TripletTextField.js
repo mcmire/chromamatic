@@ -1,6 +1,6 @@
 import React from "react";
 
-import styles from "./TripletTextField.module.css";
+import styles from "./TripletTextField.css";
 
 export default function TripletTextField({
   representation,

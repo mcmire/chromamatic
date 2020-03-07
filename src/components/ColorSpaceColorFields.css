@@ -1,0 +1,7 @@
+.representationName {
+  composes: representationName from "./App.css";
+}
+
+.representationFields {
+  composes: representationFields from "./App.css";
+}

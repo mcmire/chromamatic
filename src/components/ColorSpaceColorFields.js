@@ -2,7 +2,7 @@ import React from "react";
 
 import TripletTextFieldGroup from "./TripletTextFieldGroup";
 
-import styles from "./ColorSpaceColorFields.module.css";
+import styles from "./ColorSpaceColorFields.css";
 
 export default function ColorSpaceColorFields({
   representation,

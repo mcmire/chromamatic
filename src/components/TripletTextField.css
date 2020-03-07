@@ -1,0 +1,11 @@
+.textField {
+  composes: textField from "./App.css";
+}
+
+.suffix {
+  width: 1em;
+}
+
+.hasErrors {
+  composes: hasErrors from "./App.css";
+}

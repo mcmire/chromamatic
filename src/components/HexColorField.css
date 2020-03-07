@@ -1,0 +1,15 @@
+.representationName {
+  composes: representationName from "./App.css";
+}
+
+.representationFields {
+  composes: representationFields from "./App.css";
+}
+
+.textField {
+  composes: textField from "./App.css";
+}
+
+.hexColorField {
+  width: 6em;
+}
