@@ -5,3 +5,13 @@
 .representationFields {
   composes: representationFields from "./App.css";
 }
+
+.labeledInput {
+  display: inline-block;
+  padding-right: 0.5em;
+}
+
+.label {
+  font-weight: bold;
+  padding-right: 0.25em;
+}

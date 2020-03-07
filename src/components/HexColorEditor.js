@@ -1,8 +1,8 @@
 import React from "react";
 
-import styles from "./HexColorField.css";
+import styles from "./HexColorEditor.css";
 
-export default function HexColorField({
+export default function HexColorEditor({
   color,
   onColorFieldChange,
   onColorFieldBlur

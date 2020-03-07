@@ -5,8 +5,8 @@ import colorRepresentationsByName, {
   COLOR_REPRESENTATION_NAMES
 } from "../lib/colorRepresentationsByName";
 import StrictMap from "../lib/StrictMap";
-import ColorSpaceColorFields from "./ColorSpaceColorFields";
-import HexColorField from "./HexColorField";
+import ColorSpaceColorEditor from "./ColorSpaceColorEditor";
+import HexColorEditor from "./HexColorEditor";
 import Swatch from "./Swatch";
 
 function App() {
@@ -23,7 +23,7 @@ function App() {
     colorsByRepresentationName.fetch("rgb")
   );
 
-  function onTripletColorFieldChange(
+  function onColorSpaceColorFieldChange(
     selectedRepresentation,
     selectedComponent,
     newValue
@@ -103,7 +103,7 @@ function App() {
 
       if (representationName === "hex") {
         return (
-          <HexColorField
+          <HexColorEditor
             key={index}
             representation={representation}
             color={color}
@@ -113,11 +113,11 @@ function App() {
         );
       } else {
         return (
-          <ColorSpaceColorFields
+          <ColorSpaceColorEditor
             key={index}
             representation={representation}
             color={color}
-            onColorFieldChange={onTripletColorFieldChange}
+            onColorFieldChange={onColorSpaceColorFieldChange}
             onColorFieldBlur={onColorFieldBlur}
           />
         );

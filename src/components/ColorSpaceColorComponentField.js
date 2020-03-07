@@ -1,8 +1,8 @@
 import React from "react";
 
-import styles from "./TripletTextField.css";
+import styles from "./ColorSpaceColorComponentField.css";
 
-export default function TripletTextField({
+export default function ColorSpaceColorComponentField({
   representation,
   color,
   component,
