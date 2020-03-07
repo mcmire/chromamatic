@@ -19,25 +19,25 @@ const colorSpacesByName = {
   rgb: {
     name: "rgb",
     components: [
-      { name: "r", step: 1, min: 0, max: 255 },
-      { name: "g", step: 1, min: 0, max: 255 },
-      { name: "b", step: 1, min: 0, max: 255 }
+      { name: "r", step: 1, min: 0, max: 255, round: 0 },
+      { name: "g", step: 1, min: 0, max: 255, round: 0 },
+      { name: "b", step: 1, min: 0, max: 255, round: 0 }
     ]
   },
   hsl: {
     name: "hsl",
     components: [
-      { name: "h", step: 1, min: 0, max: 360, suffix: "°" },
-      { name: "s", step: 0.5, min: 0, max: 100, suffix: "%" },
-      { name: "l", step: 0.5, min: 0, max: 100, suffix: "%" }
+      { name: "h", step: 1, min: 0, max: 360, suffix: "°", round: 0 },
+      { name: "s", step: 1, min: 0, max: 100, suffix: "%", round: 0 },
+      { name: "l", step: 1, min: 0, max: 100, suffix: "%", round: 0 }
     ]
   },
   lab: {
     name: "lab",
     components: [
-      { name: "l", step: 1, min: 0, max: 100 },
-      { name: "a", step: 0.5 },
-      { name: "b", step: 0.5 }
+      { name: "l", step: 0.1, min: 0, max: 100, round: 1 },
+      { name: "a", step: 0.1, round: 1 },
+      { name: "b", step: 0.1, round: 1 }
     ]
   },
   hex: {
@@ -46,8 +46,13 @@ const colorSpacesByName = {
   }
 };
 
-function roundNumber(number) {
-  return Math.round(number * 1000) / 1000;
+function roundNumber(number, precision = 0) {
+  if (precision === 0) {
+    return Math.round(number);
+  } else {
+    const multiplier = Math.pow(10, precision);
+    return Math.round(number * multiplier) / multiplier;
+  }
 }
 
 function buildFormalColor(color) {
@@ -98,6 +103,7 @@ class WrappedColor {
       this.textColor = this.formalColor.luminosity() >= 0.5 ? "black" : "white";
     } catch (e) {
       if (/Unable to parse color/.test(e.message)) {
+        console.warn(`Unable to parse color ${color}`);
         // don't worry about it
         this.code = this.color;
         this.hex = this.color;
@@ -117,7 +123,7 @@ class WrappedColor {
       } else {
         const values = this.colorSpace.components.map(component => {
           const number = this.formalColor[component.name]();
-          return roundNumber(number);
+          return roundNumber(number, component.round);
         });
         return `${this.colorSpace.name}(${values.join(",")})`;
       }
@@ -136,7 +142,9 @@ function TripletTextField({ colorSpace, color, component, onColorUpdated }) {
   }
 
   const number = _.fetch(color, component.name);
-  const value = isNaN(number) ? "0" : roundNumber(number.toString());
+  const value = isNaN(number)
+    ? "0"
+    : roundNumber(number, component.round).toString();
 
   const extraProps = {};
 
@@ -279,6 +287,7 @@ function App() {
       newSelectedFormalColor = buildFormalColor(newSelectedColor);
     } catch (e) {
       if (/Unable to parse color/.test(e.message)) {
+        console.warn(`Unable to parse color ${newSelectedColor}`);
         // don't worry about it
       } else {
         throw e;
@@ -304,7 +313,6 @@ function App() {
       );
       setColorsByColorSpaceName(newColorsByColorSpaceName);
     } else {
-      console.log(`setting ${selectedColorSpace.name} to ${newSelectedColor}`);
       setColorsByColorSpaceName({
         ...colorsByColorSpaceName,
         [selectedColorSpace.name]: newSelectedColor
