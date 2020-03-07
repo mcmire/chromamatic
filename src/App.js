@@ -1,203 +1,109 @@
 import React, { useState } from "react";
-import _ from "lodash";
-import Color from "color";
+import _ from "./lodash";
+import colorRepresentationsByName from "./colorstuff";
+import StrictMap from "./StrictMap";
 
 import styles from "./App.module.css";
 
-_.mixin({
-  fetch: function(object, key) {
-    if (key in object) {
-      return object[key];
-    } else {
-      throw new Error(`No such key in object: ${key}`);
-    }
-  }
-});
+const COLOR_REPRESENTATION_NAMES = ["rgb", "hsl", "lab", "hex"];
 
-const colorSpaceNames = ["rgb", "hsl", "lab", "hex"];
-const colorSpacesByName = {
-  rgb: {
-    name: "rgb",
-    components: [
-      { name: "r", step: 1, min: 0, max: 255, round: 0 },
-      { name: "g", step: 1, min: 0, max: 255, round: 0 },
-      { name: "b", step: 1, min: 0, max: 255, round: 0 }
-    ]
-  },
-  hsl: {
-    name: "hsl",
-    components: [
-      { name: "h", step: 1, min: 0, max: 360, suffix: "°", round: 0 },
-      { name: "s", step: 1, min: 0, max: 100, suffix: "%", round: 0 },
-      { name: "l", step: 1, min: 0, max: 100, suffix: "%", round: 0 }
-    ]
-  },
-  lab: {
-    name: "lab",
-    components: [
-      { name: "l", step: 0.1, min: 0, max: 100, round: 1 },
-      { name: "a", step: 0.1, round: 1 },
-      { name: "b", step: 0.1, round: 1 }
-    ]
-  },
-  hex: {
-    name: "hex",
-    components: []
-  }
-};
-
-function roundNumber(number, precision = 0) {
-  if (precision === 0) {
-    return Math.round(number);
-  } else {
-    const multiplier = Math.pow(10, precision);
-    return Math.round(number * multiplier) / multiplier;
-  }
-}
-
-function buildFormalColor(color) {
-  return Color(color);
-}
-
-function Swatch({ colorsByColorSpaceName }) {
-  const wrappedColorsByColorSpaceName = _.reduce(
-    colorsByColorSpaceName,
-    (obj, color, colorSpaceName) => {
-      const colorSpace = _.fetch(colorSpacesByName, colorSpaceName);
-      const wrappedColor = new WrappedColor(colorSpace, color);
-      return { ...obj, [colorSpaceName]: wrappedColor };
-    },
-    {}
-  );
-
-  const content = colorSpaceNames.map(colorSpaceName => {
-    const wrappedColor = _.fetch(wrappedColorsByColorSpaceName, colorSpaceName);
-    return (
-      <div key={colorSpaceName} style={{ color: wrappedColor.textColor }}>
-        {wrappedColor.name}
-      </div>
-    );
+function Swatch({ colorsByRepresentationName, lastColorUpdated }) {
+  const content = COLOR_REPRESENTATION_NAMES.map(representationName => {
+    const color = colorsByRepresentationName.fetch(representationName);
+    return <div key={representationName}>{color.name}</div>;
   });
-
-  const defaultWrappedColor = _.fetch(wrappedColorsByColorSpaceName, "rgb");
 
   return (
     <div
       className={styles.swatch}
-      style={{ backgroundColor: defaultWrappedColor.code }}
+      style={{
+        backgroundColor: lastColorUpdated.hex().string,
+        color: lastColorUpdated.textColor
+      }}
     >
       <div className={styles.swatchContent}>{content}</div>
     </div>
   );
 }
 
-class WrappedColor {
-  constructor(colorSpace, color) {
-    this.colorSpace = colorSpace;
-    this.color = color;
-
-    try {
-      this.formalColor = buildFormalColor(color);
-      this.code = this.formalColor.hex();
-      this.hex = this.code;
-      this.textColor = this.formalColor.luminosity() >= 0.5 ? "black" : "white";
-    } catch (e) {
-      if (/Unable to parse color/.test(e.message)) {
-        console.warn(`Unable to parse color ${color}`);
-        // don't worry about it
-        this.code = this.color;
-        this.hex = this.color;
-        this.textColor = "red";
-      } else {
-        throw e;
-      }
-    }
-  }
-
-  get name() {
-    if (this.formalColor) {
-      if (this.colorSpace.name === "rgb" || this.colorSpace.name === "hsl") {
-        return this.formalColor.string(3);
-      } else if (this.colorSpace.name === "hex") {
-        return this.hex;
-      } else {
-        const values = this.colorSpace.components.map(component => {
-          const number = this.formalColor[component.name]();
-          return roundNumber(number, component.round);
-        });
-        return `${this.colorSpace.name}(${values.join(",")})`;
-      }
-    } else if (typeof this.color === "string") {
-      return this.color;
-    } else {
-      return "(invalid color)";
-    }
-  }
-}
-
-function TripletTextField({ colorSpace, color, component, onColorUpdated }) {
+function TripletTextField({
+  representation,
+  color,
+  component,
+  onColorFieldChange,
+  onColorFieldBlur
+}) {
   function onChange(event) {
     const input = event.target;
-    onColorUpdated(colorSpace, component, input.value);
+    onColorFieldChange(representation, component, input.value);
   }
 
-  const number = _.fetch(color, component.name);
-  const value = isNaN(number)
-    ? "0"
-    : roundNumber(number, component.round).toString();
+  const classes = [styles.textField];
+  if (color.hasErrorsOn(component.name)) {
+    classes.push(styles.textField);
+  }
 
   const extraProps = {};
-
   if ("min" in component) {
     extraProps.min = component.min;
   }
-
   if ("max" in component) {
     extraProps.max = component.max;
   }
 
+  const suffix = component.suffix != null ? component.suffix : <>&nbsp;</>;
+
   return (
     <>
       <input
-        className={styles.textField}
+        className={classes.join(" ")}
         type="number"
         step={component.step}
-        value={value}
+        value={color.get(component.name)}
         onChange={onChange}
+        onBlur={onColorFieldBlur}
         {...extraProps}
       />
-      {"suffix" in component ? component.suffix : <>&nbsp;</>}
+      <span className={styles.suffix}>{suffix}</span>
     </>
   );
 }
 
 function TripletTextFieldGroup({
-  colorSpace,
+  representation,
   color,
   component,
-  onColorUpdated
+  onColorFieldChange,
+  onColorFieldBlur
 }) {
   return (
     <fieldset className={`${styles.fieldset} ${styles.labeledInput}`}>
       <label className={styles.label}>{component.name.toUpperCase()}</label>
       <TripletTextField
-        colorSpace={colorSpace}
+        representation={representation}
         color={color}
         component={component}
-        onColorUpdated={onColorUpdated}
+        onColorFieldChange={onColorFieldChange}
+        onColorFieldBlur={onColorFieldBlur}
       />
     </fieldset>
   );
 }
 
-function ColorFields({ colorSpace, color, onColorUpdated }) {
-  const content = colorSpace.components.map((component, index) => (
+function ColorSpaceColorFields({
+  representation,
+  color,
+  onColorFieldChange,
+  onColorFieldBlur
+}) {
+  const content = representation.components.map((component, index) => (
     <TripletTextFieldGroup
       key={index}
-      colorSpace={colorSpace}
+      representation={representation}
       color={color}
       component={component}
-      onColorUpdated={onColorUpdated}
+      onColorFieldChange={onColorFieldChange}
+      onColorFieldBlur={onColorFieldBlur}
     />
   ));
 
@@ -208,141 +114,153 @@ function ColorFields({ colorSpace, color, onColorUpdated }) {
   );
 }
 
-function HexColorField({ colorsByColorSpaceName, onColorUpdated }) {
+function HexColorField({ color, onColorFieldChange, onColorFieldBlur }) {
   function onChange(event) {
     const input = event.target;
-    onColorUpdated(input.value);
+    onColorFieldChange(input.value);
   }
 
-  const wrappedColorsByColorSpaceName = _.reduce(
-    colorsByColorSpaceName,
-    (obj, color, colorSpaceName) => {
-      const colorSpace = _.fetch(colorSpacesByName, colorSpaceName);
-      const wrappedColor = new WrappedColor(colorSpace, color);
-      return { ...obj, [colorSpaceName]: wrappedColor };
-    },
-    {}
-  );
-  const wrappedColor = _.fetch(wrappedColorsByColorSpaceName, "hex");
+  let className = color.isValid()
+    ? `${styles.textField} ${styles.hexColorField}`
+    : `${styles.textField} ${styles.hexColorField} ${styles.hasErrors}`;
 
   return (
     <fieldset className={`${styles.fieldset} ${styles.triplet}`}>
       <label className={styles.label}>Hex</label>
       <input
-        className={`${styles.textField} ${styles.hexColorField}`}
+        className={className}
         type="text"
-        value={wrappedColor.color}
+        value={color.data}
         onChange={onChange}
+        onBlur={onColorFieldBlur}
       />
     </fieldset>
   );
 }
 
 function App() {
-  const initialState = _.reduce(
-    colorSpacesByName,
-    (obj, colorSpace, colorSpaceName) => {
-      const color =
-        colorSpace.components.length > 0
-          ? colorSpace.components.reduce((obj2, component) => {
-              return { ...obj2, [component.name]: 0 };
-            }, {})
-          : "#000000";
-      return { ...obj, [colorSpaceName]: color };
+  const initialState = colorRepresentationsByName.reduce(
+    (map, representation, representationName) => {
+      return map.cloneWith({ [representationName]: representation.black() });
     },
-    {}
+    new StrictMap()
   );
-  const [colorsByColorSpaceName, setColorsByColorSpaceName] = useState(
+  const [colorsByRepresentationName, setColorsByRepresentationName] = useState(
     initialState
   );
+  const [lastColorUpdated, setLastColorUpdated] = useState(
+    colorsByRepresentationName.fetch("rgb")
+  );
 
-  function onTripletColorUpdated(
-    selectedColorSpace,
+  function onTripletColorFieldChange(
+    selectedRepresentation,
     selectedComponent,
     newValue
   ) {
-    const selectedColor = _.fetch(
-      colorsByColorSpaceName,
-      selectedColorSpace.name
+    const selectedColor = colorsByRepresentationName.fetch(
+      selectedRepresentation.name
     );
-    const newSelectedColor = {
-      ...selectedColor,
-      [selectedComponent.name]: newValue
-    };
-    _onColorUpdated(newSelectedColor, selectedColorSpace);
+    _onColorFieldChange(
+      selectedColor.cloneWith({ [selectedComponent.name]: newValue }),
+      selectedRepresentation
+    );
   }
 
-  function onHexColorUpdated(newValue) {
-    _onColorUpdated(newValue, colorSpacesByName.hex);
+  function onHexColorFieldChange(newHexString) {
+    const selectedColor = colorsByRepresentationName.fetch("hex");
+    _onColorFieldChange(
+      selectedColor.cloneWith(newHexString),
+      colorRepresentationsByName.fetch("hex")
+    );
   }
 
-  function _onColorUpdated(newSelectedColor, selectedColorSpace) {
-    const unselectedColorSpaceNames = _.difference(
-      Object.keys(colorsByColorSpaceName),
-      [selectedColorSpace.name]
+  function onColorFieldBlur() {
+    const newColorsByRepresentationName = colorsByRepresentationName.reduce(
+      (map, color, colorRepresentationName) => {
+        return map.cloneWith({
+          [colorRepresentationName]: color.withNormalizedData()
+        });
+      },
+      new StrictMap()
     );
-    let newSelectedFormalColor;
 
-    try {
-      newSelectedFormalColor = buildFormalColor(newSelectedColor);
-    } catch (e) {
-      if (/Unable to parse color/.test(e.message)) {
-        console.warn(`Unable to parse color ${newSelectedColor}`);
-        // don't worry about it
-      } else {
-        throw e;
-      }
-    }
+    setColorsByRepresentationName(newColorsByRepresentationName);
+  }
 
-    if (newSelectedFormalColor) {
-      const newColorsByColorSpaceName = unselectedColorSpaceNames.reduce(
-        (obj, unselectedColorSpaceName) => {
-          const newUnselectedFormalColor = newSelectedFormalColor[
-            unselectedColorSpaceName
-          ]();
-          const newUnselectedInformalColor =
-            typeof newUnselectedFormalColor === "string"
-              ? newUnselectedFormalColor
-              : newUnselectedFormalColor.object();
+  function _onColorFieldChange(newSelectedColor, selectedRepresentation) {
+    newSelectedColor.validate();
+
+    let newColorsByRepresentationName = colorsByRepresentationName.cloneWith({
+      [selectedRepresentation.name]: newSelectedColor
+    });
+
+    if (newSelectedColor.isValid()) {
+      const unselectedRepresentationNames = _.difference(
+        Array.from(colorsByRepresentationName.keys()),
+        [selectedRepresentation.name]
+      );
+
+      const additionalColorsByRepresentationName = unselectedRepresentationNames.reduce(
+        (obj, unselectedRepresentationName) => {
+          const newUnselectedColor = newSelectedColor.convertTo(
+            colorRepresentationsByName.fetch(unselectedRepresentationName)
+          );
           return {
             ...obj,
-            [unselectedColorSpaceName]: newUnselectedInformalColor
+            [unselectedRepresentationName]: newUnselectedColor
           };
         },
-        { [selectedColorSpace.name]: newSelectedColor }
+        {}
       );
-      setColorsByColorSpaceName(newColorsByColorSpaceName);
-    } else {
-      setColorsByColorSpaceName({
-        ...colorsByColorSpaceName,
-        [selectedColorSpace.name]: newSelectedColor
-      });
+
+      newColorsByRepresentationName = newColorsByRepresentationName.cloneWith(
+        additionalColorsByRepresentationName
+      );
+
+      setLastColorUpdated(newSelectedColor);
     }
+
+    setColorsByRepresentationName(newColorsByRepresentationName);
   }
 
-  const colorFields = colorSpaceNames.map((colorSpaceName, index) => {
-    const color = _.fetch(colorsByColorSpaceName, colorSpaceName);
-    const colorSpace = _.fetch(colorSpacesByName, colorSpaceName);
-    return (
-      <ColorFields
-        key={index}
-        colorSpace={colorSpace}
-        color={color}
-        onColorUpdated={onTripletColorUpdated}
-      />
-    );
-  });
+  const colorFields = COLOR_REPRESENTATION_NAMES.map(
+    (representationName, index) => {
+      const color = colorsByRepresentationName.fetch(representationName);
+      const representation = colorRepresentationsByName.fetch(
+        representationName
+      );
+
+      if (representationName === "hex") {
+        return (
+          <HexColorField
+            key={index}
+            representation={representation}
+            color={color}
+            onColorFieldChange={onHexColorFieldChange}
+            onColorFieldBlur={onColorFieldBlur}
+          />
+        );
+      } else {
+        return (
+          <ColorSpaceColorFields
+            key={index}
+            representation={representation}
+            color={color}
+            onColorFieldChange={onTripletColorFieldChange}
+            onColorFieldBlur={onColorFieldBlur}
+          />
+        );
+      }
+    }
+  );
 
   return (
     <>
-      <Swatch colorsByColorSpaceName={colorsByColorSpaceName} />
-      <form>
-        {colorFields}
-        <HexColorField
-          colorsByColorSpaceName={colorsByColorSpaceName}
-          onColorUpdated={onHexColorUpdated}
-        />
-      </form>
+      <Swatch
+        colorsByRepresentationName={colorsByRepresentationName}
+        lastColorUpdated={lastColorUpdated}
+      />
+      <form>{colorFields}</form>
     </>
   );
 }
