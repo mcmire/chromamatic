@@ -53,6 +53,10 @@ export default class Color {
     return this._calculateRelativeLuminance() >= 0.5 ? "black" : "white";
   }
 
+  toSerializable() {
+    throw new Error(`${this.constructor.name} must implement #toSerializable`);
+  }
+
   _addError(prop, message) {
     this.errors[prop] = this._errorsOn(prop).concat([message]);
   }

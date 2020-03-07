@@ -15,7 +15,6 @@ export default class ColorSpaceRepresentation extends Representation {
 
   typeCheckColorData(data) {
     if (!_.isPlainObject(data)) {
-      debugger;
       throw new Error("Given color should be an object");
     }
 
@@ -44,11 +43,12 @@ export default class ColorSpaceRepresentation extends Representation {
     return this.buildColor(_.times(this.components.length, _.constant(0)));
   }
 
-  buildColor(values) {
-    return new ColorInColorSpace(
-      this,
-      _.fromPairs(_.zip(this.componentNames, values))
-    );
+  buildColor(valuesOrData) {
+    const data = _.isPlainObject(valuesOrData)
+      ? valuesOrData
+      : _.fromPairs(_.zip(this.componentNames, valuesOrData));
+
+    return new ColorInColorSpace(this, data);
   }
 
   convertColor(color) {

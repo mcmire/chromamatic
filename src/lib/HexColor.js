@@ -58,4 +58,8 @@ export default class HexColor extends Color {
   hex() {
     return this;
   }
+
+  toSerializable() {
+    return this.data;
+  }
 }

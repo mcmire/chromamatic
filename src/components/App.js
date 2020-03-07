@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import _ from "../vendor/lodash";
 
 import colorRepresentationsByName, {
@@ -11,20 +11,9 @@ import Swatch from "./Swatch";
 
 import styles from "./App.css";
 
-function App() {
-  const initialState = colorRepresentationsByName.reduce(
-    (map, representation, representationName) => {
-      return map.cloneWith({ [representationName]: representation.black() });
-    },
-    new StrictMap()
-  );
-  const [colorsByRepresentationName, setColorsByRepresentationName] = useState(
-    initialState
-  );
-  const [lastColorUpdated, setLastColorUpdated] = useState(
-    colorsByRepresentationName.fetch("rgb")
-  );
+const LOCAL_STORAGE_KEY = "lastColorUpdated";
 
+function App() {
   function onColorSpaceColorFieldChange(
     selectedRepresentation,
     selectedComponent,
@@ -48,16 +37,22 @@ function App() {
   }
 
   function onColorFieldBlur() {
-    const newColorsByRepresentationName = colorsByRepresentationName.reduce(
-      (map, color, colorRepresentationName) => {
-        return map.cloneWith({
-          [colorRepresentationName]: color.withNormalizedData()
-        });
-      },
-      new StrictMap()
+    const allColorsAreValid = colorsByRepresentationName.every(
+      (color, colorRepresentationName) => color.isValid()
     );
 
-    setColorsByRepresentationName(newColorsByRepresentationName);
+    if (allColorsAreValid) {
+      const newColorsByRepresentationName = colorsByRepresentationName.reduce(
+        (map, color, colorRepresentationName) => {
+          return map.cloneWith({
+            [colorRepresentationName]: color.withNormalizedData()
+          });
+        },
+        new StrictMap()
+      );
+
+      setColorsByRepresentationName(newColorsByRepresentationName);
+    }
   }
 
   function _onColorFieldChange(newSelectedColor, selectedRepresentation) {
@@ -91,10 +86,53 @@ function App() {
       );
 
       setLastColorUpdated(newSelectedColor);
+
+      localStorage.setItem(
+        LOCAL_STORAGE_KEY,
+        JSON.stringify({
+          representationName: newSelectedColor.representation.name,
+          data: newSelectedColor.toSerializable()
+        })
+      );
     }
 
     setColorsByRepresentationName(newColorsByRepresentationName);
   }
+
+  const initialState = colorRepresentationsByName.reduce(
+    (map, representation, representationName) => {
+      return map.cloneWith({ [representationName]: representation.black() });
+    },
+    new StrictMap()
+  );
+  const [colorsByRepresentationName, setColorsByRepresentationName] = useState(
+    initialState
+  );
+  const [lastColorUpdated, setLastColorUpdated] = useState(
+    colorsByRepresentationName.fetch("rgb")
+  );
+
+  useEffect(() => {
+    const saveData = localStorage.getItem(LOCAL_STORAGE_KEY);
+
+    if (saveData != null) {
+      const { representationName, data } = JSON.parse(saveData);
+      const representation = colorRepresentationsByName.fetch(
+        representationName
+      );
+      try {
+        const color = representation.buildColor(data).withNormalizedData();
+        _onColorFieldChange(color, representation);
+      } catch (e) {
+        console.error(
+          "Corrupt save data in localStorage, cannot restore.",
+          saveData,
+          e
+        );
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+      }
+    }
+  }, []);
 
   const colorEditors = COLOR_REPRESENTATION_NAMES.map(
     (representationName, index) => {

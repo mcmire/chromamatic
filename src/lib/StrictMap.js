@@ -35,6 +35,10 @@ export default class StrictMap extends Map {
     return _.reduce(this.toPlainObject(), fn, memo);
   }
 
+  every(fn) {
+    return _.every(this.toPlainObject(), fn);
+  }
+
   toPlainObject() {
     return _.fromPairs(_.toPairs(this));
   }

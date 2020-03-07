@@ -82,4 +82,8 @@ export default class ColorInColorSpace extends Color {
   toPlainObject() {
     return this.data.toPlainObject();
   }
+
+  toSerializable() {
+    return this.toPlainObject();
+  }
 }
