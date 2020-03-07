@@ -442,18 +442,33 @@ const colorRepresentationsByName = new StrictMap({
       }
     ]
   }),
-  lab: new ColorSpaceRepresentation({
-    name: "lab",
+  hsluv: new ColorSpaceRepresentation({
+    name: "hsluv",
     components: [
       {
-        name: "l",
-        step: 0.1,
+        name: "h",
+        step: 1,
         min: 0,
-        max: 100,
+        max: 360,
+        suffix: "°",
         precision: 1
       },
-      { name: "a", step: 0.1, precision: 1 },
-      { name: "b", step: 0.1, precision: 1 }
+      {
+        name: "s",
+        step: 1,
+        min: 0,
+        max: 100,
+        suffix: "%",
+        precision: 1
+      },
+      {
+        name: "l",
+        step: 1,
+        min: 0,
+        max: 100,
+        suffix: "%",
+        precision: 1
+      }
     ]
   }),
   hex: new HexRepresentation()

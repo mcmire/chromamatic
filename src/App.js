@@ -5,7 +5,7 @@ import StrictMap from "./StrictMap";
 
 import styles from "./App.module.css";
 
-const COLOR_REPRESENTATION_NAMES = ["rgb", "hsl", "lab", "hex"];
+const COLOR_REPRESENTATION_NAMES = ["rgb", "hsl", "hsluv", "hex"];
 
 function Swatch({ colorsByRepresentationName, lastColorUpdated }) {
   const content = COLOR_REPRESENTATION_NAMES.map(representationName => {
@@ -35,7 +35,7 @@ function TripletTextField({
 }) {
   function onChange(event) {
     const input = event.target;
-    onColorFieldChange(representation, component, input.value);
+    onColorFieldChange(representation, component, parseFloat(input.value, 10));
   }
 
   const classes = [styles.textField];
