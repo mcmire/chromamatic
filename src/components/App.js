@@ -9,6 +9,8 @@ import ColorSpaceColorEditor from "./ColorSpaceColorEditor";
 import HexColorEditor from "./HexColorEditor";
 import Swatch from "./Swatch";
 
+import styles from "./App.css";
+
 function App() {
   const initialState = colorRepresentationsByName.reduce(
     (map, representation, representationName) => {
@@ -94,7 +96,7 @@ function App() {
     setColorsByRepresentationName(newColorsByRepresentationName);
   }
 
-  const colorFields = COLOR_REPRESENTATION_NAMES.map(
+  const colorEditors = COLOR_REPRESENTATION_NAMES.map(
     (representationName, index) => {
       const color = colorsByRepresentationName.fetch(representationName);
       const representation = colorRepresentationsByName.fetch(
@@ -104,6 +106,7 @@ function App() {
       if (representationName === "hex") {
         return (
           <HexColorEditor
+            className={styles.hexColorEditor}
             key={index}
             representation={representation}
             color={color}
@@ -126,13 +129,13 @@ function App() {
   );
 
   return (
-    <>
+    <div className={styles.app}>
       <Swatch
         colorsByRepresentationName={colorsByRepresentationName}
         lastColorUpdated={lastColorUpdated}
       />
-      <form>{colorFields}</form>
-    </>
+      <div className={styles.colorEditors}>{colorEditors}</div>
+    </div>
   );
 }
 

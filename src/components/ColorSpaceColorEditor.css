@@ -1,9 +1,22 @@
+.colorEditor {
+  composes: colorEditor from "./App.css";
+}
+
 .representationName {
   composes: representationName from "./App.css";
 }
 
 .representationFields {
   composes: representationFields from "./App.css";
+}
+
+.textField {
+  composes: textField from "./App.css";
+}
+
+.colorName {
+  width: 20em;
+  color: gray;
 }
 
 .labeledInput {

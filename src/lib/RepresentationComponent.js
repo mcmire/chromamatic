@@ -7,7 +7,8 @@ export default class RepresentationComponent {
     min = null,
     max = null,
     precision = null,
-    suffix = null
+    suffix = null,
+    cssSuffix = null
   }) {
     this.name = name;
     this.step = step;
@@ -15,6 +16,7 @@ export default class RepresentationComponent {
     this.max = max;
     this.precision = precision;
     this.suffix = suffix;
+    this.cssSuffix = cssSuffix;
   }
 
   normalize(value) {

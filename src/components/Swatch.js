@@ -8,11 +8,6 @@ export default function Swatch({
   colorsByRepresentationName,
   lastColorUpdated
 }) {
-  const content = COLOR_REPRESENTATION_NAMES.map(representationName => {
-    const color = colorsByRepresentationName.fetch(representationName);
-    return <div key={representationName}>{color.name}</div>;
-  });
-
   return (
     <div
       className={styles.swatch}
@@ -20,8 +15,6 @@ export default function Swatch({
         backgroundColor: lastColorUpdated.hex().string,
         color: lastColorUpdated.textColor
       }}
-    >
-      <div className={styles.swatchContent}>{content}</div>
-    </div>
+    />
   );
 }

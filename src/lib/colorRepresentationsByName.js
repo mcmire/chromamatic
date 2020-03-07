@@ -48,6 +48,7 @@ const colorRepresentationsByName = new StrictMap({
         min: 0,
         max: 100,
         suffix: "%",
+        cssSuffix: "%",
         precision: 1
       },
       {
@@ -56,6 +57,7 @@ const colorRepresentationsByName = new StrictMap({
         min: 0,
         max: 100,
         suffix: "%",
+        cssSuffix: "%",
         precision: 1
       }
     ]
@@ -77,6 +79,7 @@ const colorRepresentationsByName = new StrictMap({
         min: 0,
         max: 100,
         suffix: "%",
+        cssSuffix: "%",
         precision: 1
       },
       {
@@ -85,6 +88,7 @@ const colorRepresentationsByName = new StrictMap({
         min: 0,
         max: 100,
         suffix: "%",
+        cssSuffix: "%",
         precision: 1
       }
     ]

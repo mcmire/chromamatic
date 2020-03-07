@@ -31,7 +31,10 @@ export default class ColorSpaceRepresentation extends Representation {
       return this.stringifyColor(color);
     } else {
       const formattedNumbers = this.components.map(component => {
-        return component.normalize(color.get(component.name));
+        return (
+          component.normalize(color.get(component.name)).toString() +
+          (component.cssSuffix != null ? component.cssSuffix : "")
+        );
       });
       return `${this.name}(${formattedNumbers.join(", ")})`;
     }

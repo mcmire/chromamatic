@@ -3,6 +3,7 @@ import React from "react";
 import styles from "./HexColorEditor.css";
 
 export default function HexColorEditor({
+  className,
   color,
   onColorFieldChange,
   onColorFieldBlur
@@ -18,7 +19,7 @@ export default function HexColorEditor({
   }
 
   return (
-    <fieldset className={styles.representationFields}>
+    <div className={`${className} ${styles.colorEditor}`}>
       <label className={styles.representationName}>hex</label>
       <input
         className={classes.join(" ")}
@@ -27,6 +28,6 @@ export default function HexColorEditor({
         onChange={onChange}
         onBlur={onColorFieldBlur}
       />
-    </fieldset>
+    </div>
   );
 }

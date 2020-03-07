@@ -1,3 +1,7 @@
+.colorEditor {
+  composes: colorEditor from "./App.css";
+}
+
 .representationName {
   composes: representationName from "./App.css";
 }

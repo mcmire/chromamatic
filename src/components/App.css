@@ -1,3 +1,19 @@
+.app {
+  display: flex;
+}
+
+.colorEditors {
+  flex-grow: 1;
+}
+
+.colorEditor {
+  margin-bottom: 1em;
+}
+
+.hexColorEditor {
+  margin-top: 2em;
+}
+
 .representationName {
   font-weight: bold;
   display: inline-block;
