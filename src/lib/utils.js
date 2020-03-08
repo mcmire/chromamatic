@@ -1,3 +1,5 @@
+import _ from "../vendor/lodash";
+
 export function roundNumber(number, precision = 0) {
   if (precision === 0) {
     return Math.round(number);
@@ -6,4 +8,3 @@ export function roundNumber(number, precision = 0) {
     return Math.round(number * multiplier) / multiplier;
   }
 }
-

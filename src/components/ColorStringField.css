@@ -1,0 +1,13 @@
+.colorStringField {
+  composes: textField from "./App.css";
+
+  width: 16em;
+}
+
+.hexField {
+  width: 8em;
+}
+
+.hasErrors {
+  composes: hasErrors from "./App.css";
+}

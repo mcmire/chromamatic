@@ -1,0 +1,12 @@
+.editorGroup {
+  margin-bottom: 1em;
+}
+
+.editorGroupName {
+  composes: column from "./App.css";
+
+  font-weight: bold;
+  display: inline-block;
+  width: 3em;
+  color: hsl(216, 90%, 45%);
+}

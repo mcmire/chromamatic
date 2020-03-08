@@ -1,12 +1,10 @@
 import React, { useEffect, useState } from "react";
 import _ from "../vendor/lodash";
 
-import colorRepresentationsByName, {
-  COLOR_REPRESENTATION_NAMES
-} from "../lib/colorRepresentationsByName";
-import StrictMap from "../lib/StrictMap";
-import ColorSpaceColorEditor from "./ColorSpaceColorEditor";
-import HexColorEditor from "./HexColorEditor";
+//import StrictMap from "../lib/StrictMap";
+import colorSpacesByName, { COLOR_SPACE_NAMES } from "../lib/colorSpacesByName";
+import ColorSpaceGroup from "./ColorSpaceGroup";
+//import StringColorEditor from "./StringColorEditor";
 import Swatch from "./Swatch";
 
 import styles from "./App.css";
@@ -14,165 +12,273 @@ import styles from "./App.css";
 const LOCAL_STORAGE_KEY = "lastColorUpdated";
 
 function App() {
-  function onColorSpaceColorFieldChange(
-    selectedRepresentation,
-    selectedComponent,
-    newValue
+  function onColorTupleComponentFieldUpdate(
+    colorForm,
+    component,
+    newComponentValue
   ) {
-    const selectedColor = colorsByRepresentationName.fetch(
-      selectedRepresentation.name
-    );
-    _onColorFieldChange(
-      selectedColor.cloneWith({ [selectedComponent.name]: newValue }),
-      selectedRepresentation
-    );
+    _onColorUpdate(colorForm, { [component.name]: newComponentValue });
   }
 
-  function onHexColorFieldChange(newHexString) {
-    const selectedColor = colorsByRepresentationName.fetch("hex");
-    _onColorFieldChange(
-      selectedColor.cloneWith(newHexString),
-      colorRepresentationsByName.fetch("hex")
-    );
+  function onColorStringFieldUpdate(colorForm, newString) {
+    _onColorUpdate(colorForm, newString);
   }
 
-  function onColorFieldBlur() {
-    const allColorsAreValid = colorsByRepresentationName.every(
-      (color, colorRepresentationName) => color.isValid()
-    );
+  function _onColorUpdate(selectedColorForm, newData) {
+    const selectedColorSpaceName = selectedColorForm.colorSpace.name;
+    const selectedRepresentationName = selectedColorForm.representation.name;
+    const newSelectedColorForm = selectedColorForm.cloneWith(newData);
 
-    if (allColorsAreValid) {
-      const newColorsByRepresentationName = colorsByRepresentationName.reduce(
-        (map, color, colorRepresentationName) => {
-          return map.cloneWith({
-            [colorRepresentationName]: color.withNormalizedData()
-          });
-        },
-        new StrictMap()
-      );
-
-      setColorsByRepresentationName(newColorsByRepresentationName);
-    }
-  }
-
-  function _onColorFieldChange(newSelectedColor, selectedRepresentation) {
-    newSelectedColor.validate();
-
-    let newColorsByRepresentationName = colorsByRepresentationName.cloneWith({
-      [selectedRepresentation.name]: newSelectedColor
+    setColorFormsByColorSpaceName({
+      ...colorFormsByColorSpaceName,
+      [selectedColorSpaceName]: {
+        ..._.demand(
+          colorFormsByColorSpaceName,
+          newSelectedColorForm.colorSpace.name
+        ),
+        [newSelectedColorForm.representation.name]: newSelectedColorForm
+      }
     });
 
-    if (newSelectedColor.isValid()) {
-      const unselectedRepresentationNames = _.difference(
-        Array.from(colorsByRepresentationName.keys()),
-        [selectedRepresentation.name]
-      );
+    const result = newSelectedColorForm.attemptToBuildColor();
 
-      const additionalColorsByRepresentationName = unselectedRepresentationNames.reduce(
-        (obj, unselectedRepresentationName) => {
+    if (result.ok) {
+      const newSelectedColor = result.value;
+      const nonSelectedColorSpaceNames = _.difference(
+        Object.keys(colorsByColorSpaceName),
+        [selectedColorSpaceName]
+      );
+      const newColorsByColorSpaceName = nonSelectedColorSpaceNames.reduce(
+        (obj, nonSelectedColorSpaceName) => {
           const newUnselectedColor = newSelectedColor.convertTo(
-            colorRepresentationsByName.fetch(unselectedRepresentationName)
+            nonSelectedColorSpaceName
           );
           return {
             ...obj,
-            [unselectedRepresentationName]: newUnselectedColor
+            [nonSelectedColorSpaceName]: newUnselectedColor
+          };
+        },
+        { [selectedColorSpaceName]: newSelectedColor }
+      );
+
+      // We kind of already did this above, but just do it all over again
+      const newColorFormsByColorSpaceName = _.reduce(
+        colorFormsByColorSpaceName,
+        (obj, colorFormsByRepresentationName, colorSpaceName) => {
+          const newColorFormsByRepresentationName = _.reduce(
+            colorFormsByRepresentationName,
+            (obj2, colorForm, representationName) => {
+              return {
+                ...obj2,
+                [representationName]: colorForm.cloneFromColor(
+                  newColorsByColorSpaceName[colorSpaceName]
+                )
+              };
+            },
+            {}
+          );
+          return {
+            ...obj,
+            [colorSpaceName]: newColorFormsByRepresentationName
           };
         },
         {}
       );
 
-      newColorsByRepresentationName = newColorsByRepresentationName.cloneWith(
-        additionalColorsByRepresentationName
+      /*
+      console.log("newColorsByColorSpaceName", newColorsByColorSpaceName);
+      console.log(
+        "newColorFormsByColorSpaceName",
+        newColorFormsByColorSpaceName
       );
+      */
 
+      setColorsByColorSpaceName(newColorsByColorSpaceName);
       setLastColorUpdated(newSelectedColor);
+      setColorFormsByColorSpaceName(newColorFormsByColorSpaceName);
 
       localStorage.setItem(
         LOCAL_STORAGE_KEY,
         JSON.stringify({
-          representationName: newSelectedColor.representation.name,
-          data: newSelectedColor.toSerializable()
+          colorSpaceName: selectedColorSpaceName,
+          representationName: selectedRepresentationName,
+          data: newSelectedColorForm.toSerializable()
         })
       );
     }
-
-    setColorsByRepresentationName(newColorsByRepresentationName);
   }
 
-  const initialState = colorRepresentationsByName.reduce(
-    (map, representation, representationName) => {
-      return map.cloneWith({ [representationName]: representation.black() });
-    },
-    new StrictMap()
+  function onColorEditorLeave() {
+    /*
+    const allColorForms = _.flatten(
+      _.map(
+        colorFormsByColorSpaceName,
+        (colorFormsByRepresentationName, colorSpaceName) =>
+          _.values(colorFormsByRepresentationName)
+      )
+    );
+    const allColorFormsAreValid = _.every(allColorForms, "isValid");
+
+    if (allColorsAreValid) {
+      const newColorsByColorSpaceName = _.reduce(
+        colorsByColorSpaceName,
+        (obj, color, colorSpaceName) => {
+          return { ...obj, [colorSpaceName]: color.withNormalizedData() };
+        },
+        {}
+      );
+
+      setColorsByColorSpaceName(newColorsByColorSpaceName);
+    }
+    */
+  }
+
+  function _buildInitialState() {
+    const initialState = {};
+
+    initialState.colorsByColorSpaceName = _.reduce(
+      colorSpacesByName,
+      (obj, colorSpace, colorSpaceName) => {
+        return { ...obj, [colorSpaceName]: colorSpace.black() };
+      },
+      {}
+    );
+
+    initialState.colorFormsByColorSpaceName = _.reduce(
+      colorSpacesByName,
+      (obj, colorSpace, colorSpaceName) => {
+        const color = _.demand(
+          initialState.colorsByColorSpaceName,
+          colorSpaceName
+        );
+        return {
+          ...obj,
+          [colorSpaceName]: _.reduce(
+            colorSpace.representationsByName,
+            (obj2, representation, representationName) => {
+              return {
+                ...obj2,
+                [representationName]: representation.buildFormFrom(color)
+              };
+            },
+            {}
+          )
+        };
+      },
+      {}
+    );
+
+    return initialState;
+  }
+
+  const initialState = _buildInitialState();
+  const [colorsByColorSpaceName, setColorsByColorSpaceName] = useState(
+    initialState.colorsByColorSpaceName
   );
-  const [colorsByRepresentationName, setColorsByRepresentationName] = useState(
-    initialState
+  const [colorFormsByColorSpaceName, setColorFormsByColorSpaceName] = useState(
+    initialState.colorFormsByColorSpaceName
   );
   const [lastColorUpdated, setLastColorUpdated] = useState(
-    colorsByRepresentationName.fetch("rgb")
+    _.demand(colorsByColorSpaceName, COLOR_SPACE_NAMES[0])
   );
 
   useEffect(() => {
     const saveData = localStorage.getItem(LOCAL_STORAGE_KEY);
 
     if (saveData != null) {
-      const { representationName, data } = JSON.parse(saveData);
-      const representation = colorRepresentationsByName.fetch(
-        representationName
-      );
       try {
-        const color = representation.buildColor(data).withNormalizedData();
-        _onColorFieldChange(color, representation);
+        const { colorSpaceName, representationName, data } = JSON.parse(
+          saveData
+        );
+        const existingColorForm = _.demand(
+          colorFormsByColorSpaceName,
+          `${colorSpaceName}.${representationName}`
+        );
+        const newColorForm = existingColorForm.cloneWith(data);
+        const result = newColorForm.attemptToBuildColor();
+
+        if (result.ok) {
+          _onColorUpdate(newColorForm, data);
+        } else {
+          console.error(
+            "Corrupt save data in localStorage, cannot restore.",
+            saveData
+          );
+          localStorage.removeItem(LOCAL_STORAGE_KEY);
+        }
       } catch (e) {
         console.error(
           "Corrupt save data in localStorage, cannot restore.",
           saveData,
-          e
+          e.message
         );
         localStorage.removeItem(LOCAL_STORAGE_KEY);
       }
     }
   }, []);
 
-  const colorEditors = COLOR_REPRESENTATION_NAMES.map(
-    (representationName, index) => {
-      const color = colorsByRepresentationName.fetch(representationName);
-      const representation = colorRepresentationsByName.fetch(
-        representationName
-      );
+  /*
+  console.log(
+    "COLOR_SPACE_NAMES",
+    COLOR_SPACE_NAMES,
+    "colorSpacesByName",
+    colorSpacesByName
+  );
+  */
 
-      if (representationName === "hex") {
+  const colorSpaceGroups = _.map(COLOR_SPACE_NAMES, (colorSpaceName, index) => {
+    const colorSpace = _.demand(colorSpacesByName, colorSpaceName);
+    const colorFormsByRepresentationName = _.demand(
+      colorFormsByColorSpaceName,
+      colorSpaceName
+    );
+    /*
+      console.log(
+        "colorFormsByColorSpaceName",
+        colorFormsByColorSpaceName,
+        "colorSpaceName",
+        colorSpaceName,
+        "colorFormsByRepresentationName",
+        colorFormsByRepresentationName
+      );
+      */
+
+    /*
+      if (colorSpaceName === "hex") {
         return (
-          <HexColorEditor
+          <StringColorEditor
             className={styles.hexColorEditor}
             key={index}
-            representation={representation}
+            colorSpace={colorSpace}
             color={color}
             onColorFieldChange={onHexColorFieldChange}
             onColorFieldBlur={onColorFieldBlur}
           />
         );
       } else {
-        return (
-          <ColorSpaceColorEditor
-            key={index}
-            representation={representation}
-            color={color}
-            onColorFieldChange={onColorSpaceColorFieldChange}
-            onColorFieldBlur={onColorFieldBlur}
-          />
-        );
+      */
+    return (
+      <ColorSpaceGroup
+        key={index}
+        colorSpace={colorSpace}
+        colorFormsByRepresentationName={colorFormsByRepresentationName}
+        onColorTupleComponentFieldUpdate={onColorTupleComponentFieldUpdate}
+        onColorStringFieldUpdate={onColorStringFieldUpdate}
+        onColorEditorLeave={onColorEditorLeave}
+      />
+    );
+    /*
       }
-    }
-  );
+      */
+  });
 
   return (
     <div className={styles.app}>
       <Swatch
-        colorsByRepresentationName={colorsByRepresentationName}
+        colorsByColorSpaceName={colorsByColorSpaceName}
         lastColorUpdated={lastColorUpdated}
       />
-      <div className={styles.colorEditors}>{colorEditors}</div>
+      <div className={styles.colorEditors}>{colorSpaceGroups}</div>
     </div>
   );
 }

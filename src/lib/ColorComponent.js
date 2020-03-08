@@ -1,6 +1,6 @@
 import { roundNumber } from "./utils";
 
-export default class RepresentationComponent {
+export default class ColorComponent {
   constructor({
     name,
     step,

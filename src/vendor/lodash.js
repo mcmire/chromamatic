@@ -1,11 +1,19 @@
 import lodash from "lodash";
 
 lodash.mixin({
-  fetch: function(object, key) {
-    if (key in object) {
-      return object[key];
+  demand: function(object, path) {
+    if (!lodash.isObject(object)) {
+      throw new Error(`Not an object: ${JSON.stringify(object)}`);
+    }
+
+    if (lodash.has(object, path)) {
+      return lodash.get(object, path);
     } else {
-      throw new Error(`No such key in object: ${key}`);
+      throw new Error(
+        `No such key path in object: ${path}; keys: ${JSON.stringify(
+          Object.keys(object)
+        )}`
+      );
     }
   }
 });

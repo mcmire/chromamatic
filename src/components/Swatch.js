@@ -1,6 +1,6 @@
 import React from "react";
 
-import { COLOR_REPRESENTATION_NAMES } from "../lib/colorRepresentationsByName";
+//import { COLOR_REPRESENTATION_NAMES } from "../lib/colorRepresentationsByName";
 
 import styles from "./Swatch.css";
 
@@ -12,7 +12,7 @@ export default function Swatch({
     <div
       className={styles.swatch}
       style={{
-        backgroundColor: lastColorUpdated.hex().string,
+        backgroundColor: lastColorUpdated.toFormattedString({ hex: true }),
         color: lastColorUpdated.textColor
       }}
     />

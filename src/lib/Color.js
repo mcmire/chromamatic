@@ -1,75 +1,78 @@
 import _ from "../vendor/lodash";
+import {
+  parseColor,
+  stringifyColor,
+  calculateRelativeLuminance
+} from "./colorUtils";
 
-import { calculateRelativeLuminance } from "./colorUtils";
+//import Color from "./Color";
+import StrictMap from "./StrictMap";
+import colorSpacesByName from "./colorSpacesByName";
 
 export default class Color {
-  constructor(representation, data) {
-    this.representation = representation;
-    this.data = data;
-    this.representation.typeCheckColorData(data);
-    this.errors = {};
+  constructor(colorSpace, components) {
+    this.colorSpace = colorSpace;
+    this.colorSpace.validateColorComponents(components);
+
+    this.components = new StrictMap(components);
   }
 
-  _runValidations() {
-    throw new Error(`${this.constructor.name} must implement #_runValidations`);
+  get name() {
+    return this.colorSpace.nameColor(this);
   }
 
-  validate() {
-    this._runValidations();
-    return this.isValid();
-  }
-
-  isValid() {
-    return _.isEmpty(this.errors);
-  }
-
-  hasErrorsOn(prop) {
-    return this._errorsOn(prop).length > 0;
-  }
-
-  withNormalizedData() {
-    throw new Error(
-      `${this.constructor.name} must implement #withNormalizedData`
-    );
-  }
-
-  convertTo(otherRepresentation) {
-    throw new Error(`${this.constructor.name} must implement #convertTo`);
-  }
-
-  rgb() {
-    throw new Error(`${this.constructor.name} must implement #hex`);
-  }
-
-  hex() {
-    throw new Error(`${this.constructor.name} must implement #hex`);
-  }
-
-  cloneWith(data) {
-    throw new Error(`${this.constructor.name} must implement #cloneWith`);
+  get values() {
+    return this.colorSpace.componentNames
+      .map(name => this.get(name))
+      .map(value => parseFloat(value, 10));
   }
 
   get textColor() {
     return this._calculateRelativeLuminance() >= 0.5 ? "black" : "white";
   }
 
-  toSerializable() {
-    throw new Error(`${this.constructor.name} must implement #toSerializable`);
+  get(componentName) {
+    return this.components.fetch(componentName);
   }
 
-  _addError(prop, message) {
-    this.errors[prop] = this._errorsOn(prop).concat([message]);
+  cloneWith(updatedComponents) {
+    return new this.constructor(this.colorSpace, {
+      ...this.toPlainObject(),
+      ...updatedComponents
+    });
   }
 
-  _errorsOn(prop) {
-    if (prop in this.errors) {
-      return this.errors[prop];
+  convertTo(otherColorSpace) {
+    if (typeof otherColorSpace === "string") {
+      otherColorSpace = _.demand(colorSpacesByName, otherColorSpace);
+    }
+
+    if (this.colorSpace.name === otherColorSpace.name) {
+      return this;
     } else {
-      return [];
+      return otherColorSpace.convertColor(this);
     }
   }
 
+  toFormattedString({ hex = false } = {}) {
+    if (hex) {
+      return stringifyColor(this.convertTo("rgb").values, "hex");
+    } else {
+      return stringifyColor(this.values, this.colorSpace.name);
+    }
+  }
+
+  toPlainObject() {
+    return this.components.toPlainObject();
+  }
+
+  /*
+  toSerializable() {
+    return this.toPlainObject();
+  }
+  */
+
   _calculateRelativeLuminance() {
-    return calculateRelativeLuminance(...this.rgb().values);
+    return calculateRelativeLuminance(...this.convertTo("rgb").values);
   }
 }

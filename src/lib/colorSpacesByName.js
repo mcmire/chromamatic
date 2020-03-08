@@ -1,11 +1,9 @@
-import ColorSpaceRepresentation from "./ColorSpaceRepresentation";
-import HexRepresentation from "./HexRepresentation";
-import StrictMap from "./StrictMap";
+import ColorSpace from "./ColorSpace";
 
-const COLOR_REPRESENTATION_NAMES = ["rgb", "hsl", "hsluv", "hex"];
+export const COLOR_SPACE_NAMES = ["rgb", "hsl", "hsluv"];
 
-const colorRepresentationsByName = new StrictMap({
-  rgb: new ColorSpaceRepresentation({
+const colorSpacesByName = {
+  rgb: new ColorSpace({
     name: "rgb",
     components: [
       {
@@ -29,9 +27,10 @@ const colorRepresentationsByName = new StrictMap({
         max: 255,
         precision: 0
       }
-    ]
+    ],
+    representations: ["tuple", "cssString", "hex"]
   }),
-  hsl: new ColorSpaceRepresentation({
+  hsl: new ColorSpace({
     name: "hsl",
     components: [
       {
@@ -60,9 +59,10 @@ const colorRepresentationsByName = new StrictMap({
         cssSuffix: "%",
         precision: 1
       }
-    ]
+    ],
+    representations: ["tuple", "cssString"]
   }),
-  hsluv: new ColorSpaceRepresentation({
+  hsluv: new ColorSpace({
     name: "hsluv",
     components: [
       {
@@ -91,9 +91,9 @@ const colorRepresentationsByName = new StrictMap({
         cssSuffix: "%",
         precision: 1
       }
-    ]
-  }),
-  hex: new HexRepresentation()
-});
+    ],
+    representations: ["tuple", "cssString"]
+  })
+};
 
-export { colorRepresentationsByName as default, COLOR_REPRESENTATION_NAMES };
+export default colorSpacesByName;

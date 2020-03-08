@@ -1,21 +1,20 @@
 import React from "react";
 
-import styles from "./ColorSpaceColorComponentField.css";
+import styles from "./ColorTupleComponentField.css";
 
-export default function ColorSpaceColorComponentField({
-  representation,
-  color,
+export default function ColorTupleComponentField({
+  colorForm,
   component,
-  onColorFieldChange,
-  onColorFieldBlur
+  onUpdate,
+  onLeave
 }) {
   function onChange(event) {
     const input = event.target;
-    onColorFieldChange(representation, component, input.value);
+    onUpdate(colorForm, component, input.value);
   }
 
   const classes = [styles.textField];
-  if (color.hasErrorsOn(component.name)) {
+  if (colorForm.hasErrorsOn(component.name)) {
     classes.push(styles.hasErrors);
   }
 
@@ -35,9 +34,9 @@ export default function ColorSpaceColorComponentField({
         className={classes.join(" ")}
         type="number"
         step={component.step}
-        value={color.get(component.name)}
+        value={colorForm.get(component.name)}
         onChange={onChange}
-        onBlur={onColorFieldBlur}
+        onBlur={onLeave}
         {...extraProps}
       />
       <span className={styles.suffix}>{suffix}</span>

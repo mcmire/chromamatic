@@ -21,6 +21,10 @@ export default class StrictMap extends Map {
     );
   }
 
+  withPairSet(key, value) {
+    return cloneWith({ [key]: value });
+  }
+
   fetch(key) {
     if (this.has(key)) {
       return this.get(key);
@@ -37,6 +41,10 @@ export default class StrictMap extends Map {
 
   every(fn) {
     return _.every(this.toPlainObject(), fn);
+  }
+
+  without(key) {
+    return this.cloneWith(_.omit(this.toPlainObject(), key));
   }
 
   toPlainObject() {
