@@ -13,10 +13,6 @@ export default function ColorStringField({
     onUpdate(colorForm, input.value);
   }
 
-  function onClick(event) {
-    event.target.select();
-  }
-
   const classes = [
     styles.colorStringField,
     styles[`${colorForm.representation.name}Field`]
@@ -32,7 +28,6 @@ export default function ColorStringField({
       value={colorForm.data}
       onChange={onChange}
       onBlur={onLeave}
-      onClick={onClick}
     />
   );
 }
