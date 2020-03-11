@@ -5,7 +5,6 @@ import {
   calculateRelativeLuminance
 } from "./colorUtils";
 
-//import Color from "./Color";
 import StrictMap from "./StrictMap";
 import colorSpacesByName from "./colorSpacesByName";
 
@@ -65,12 +64,6 @@ export default class Color {
   toPlainObject() {
     return this.components.toPlainObject();
   }
-
-  /*
-  toSerializable() {
-    return this.toPlainObject();
-  }
-  */
 
   _calculateRelativeLuminance() {
     return calculateRelativeLuminance(...this.convertTo("rgb").values);

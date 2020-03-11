@@ -16,14 +16,6 @@ export default function Swatch({
   onColorComponentUpdate,
   onColorUpdate
 }) {
-  /*
-  function onChangeHorizontalSlider(event) {
-    const value = event.target.value;
-    const rgb = _.demand(colorSpacesByName, "rgb");
-    onColorComponentUpdate(color, _.demand(rgb.componentsByName, "g"), value);
-  }
-  */
-
   function onChangeVerticalSlider(event) {
     const value = event.target.value;
     const rgb = _.demand(colorSpacesByName, "rgb");
@@ -52,8 +44,8 @@ export default function Swatch({
 
   function updateCursorPosition(event) {
     const rect = onscreenCanvasRef.current.getBoundingClientRect();
-    const relativeX = event.pageX - rect.x; // - CURSOR_SIZE / 2 - 1;
-    const relativeY = event.pageY - rect.y; // - CURSOR_SIZE / 2 - 1;
+    const relativeX = event.pageX - rect.x;
+    const relativeY = event.pageY - rect.y;
     const newColor = color.cloneWith({
       g: relativeX * swatchToRgbRatio,
       b: relativeY * swatchToRgbRatio
@@ -121,16 +113,6 @@ export default function Swatch({
         ref={onscreenCanvasRef}
         onMouseDown={onMouseDown}
       />
-      {/*
-      <input
-        className={`${styles.slider} ${styles.horizontalSlider}`}
-        type="range"
-        min="0"
-        max="255"
-        onChange={onChangeHorizontalSlider}
-        value={color.get("g")}
-      />
-      */}
       <input
         className={`${styles.slider} ${styles.verticalSlider}`}
         type="range"

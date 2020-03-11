@@ -47,17 +47,6 @@ export default class ColorSpace {
         error.componentName = component.name;
         return error;
       }
-      /*
-      if (component.min != null && value < component.min) {
-        throw new InvalidColorError(
-          `${component.name} must be <= ${component.min}`
-        );
-      } else if (component.max != null && value > component.max) {
-        throw new InvalidColorError(
-          `${component.name} must be >= ${component.max}`
-        );
-      }
-      */
     });
   }
 
@@ -97,12 +86,6 @@ export default class ColorSpace {
   get componentNames() {
     return this.components.map(component => component.name);
   }
-
-  /*
-  stringifyColor(color) {
-    return colorStringify(parseColor(color.toPlainObject()), this.name);
-  }
-  */
 
   _normalizeValues(values) {
     return _.zip(values, this.components).map(([value, component]) => {

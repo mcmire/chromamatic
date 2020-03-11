@@ -56,25 +56,4 @@ export default class ColorTupleForm extends ColorForm {
   cloneFromColor(color) {
     return this.cloneWith(color.toPlainObject());
   }
-
-  /*
-  _runValidations() {
-    return this.representation.components.reduce((errors, component) => {
-      const value = this.data.get(component.name);
-      const parsedValue = parseFloat(value);
-
-      if (isNaN(parsedValue)) {
-        errors.push(`${component.name} is not a number`);
-      } else if (value == null || value === "") {
-        errors.push(`${component.name} must be set`);
-      } else if (component.min != null && value < component.min) {
-        errors.push(`${component.name} must be <= ${component.min}`);
-      } else if (component.max != null && value > component.max) {
-        errors.push(`${component.name} must be >= ${component.max}`);
-      }
-
-      return errors;
-    }, []);
-  }
-  */
 }

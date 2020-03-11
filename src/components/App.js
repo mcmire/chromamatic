@@ -1,10 +1,8 @@
 import React, { useEffect, useState } from "react";
 import _ from "../vendor/lodash";
 
-//import StrictMap from "../lib/StrictMap";
 import colorSpacesByName, { COLOR_SPACE_NAMES } from "../lib/colorSpacesByName";
 import ColorSpaceGroup from "./ColorSpaceGroup";
-//import StringColorEditor from "./StringColorEditor";
 import Swatch from "./Swatch";
 
 import styles from "./App.css";
@@ -111,14 +109,6 @@ function App() {
       },
       {}
     );
-
-    /*
-      console.log("newColorsByColorSpaceName", newColorsByColorSpaceName);
-      console.log(
-        "newColorFormsByColorSpaceName",
-        newColorFormsByColorSpaceName
-      );
-      */
 
     setColorsByColorSpaceName(newColorsByColorSpaceName);
     setLastColorUpdated(newSelectedColor);
@@ -243,46 +233,12 @@ function App() {
     }
   }, []);
 
-  /*
-  console.log(
-    "COLOR_SPACE_NAMES",
-    COLOR_SPACE_NAMES,
-    "colorSpacesByName",
-    colorSpacesByName
-  );
-  */
-
   const colorSpaceGroups = _.map(COLOR_SPACE_NAMES, (colorSpaceName, index) => {
     const colorSpace = _.demand(colorSpacesByName, colorSpaceName);
     const colorFormsByRepresentationName = _.demand(
       colorFormsByColorSpaceName,
       colorSpaceName
     );
-    /*
-      console.log(
-        "colorFormsByColorSpaceName",
-        colorFormsByColorSpaceName,
-        "colorSpaceName",
-        colorSpaceName,
-        "colorFormsByRepresentationName",
-        colorFormsByRepresentationName
-      );
-      */
-
-    /*
-      if (colorSpaceName === "hex") {
-        return (
-          <StringColorEditor
-            className={styles.hexColorEditor}
-            key={index}
-            colorSpace={colorSpace}
-            color={color}
-            onColorFieldChange={onHexColorFieldChange}
-            onColorFieldBlur={onColorFieldBlur}
-          />
-        );
-      } else {
-      */
     return (
       <ColorSpaceGroup
         key={index}
@@ -293,9 +249,6 @@ function App() {
         onColorEditorLeave={onColorEditorLeave}
       />
     );
-    /*
-      }
-      */
   });
 
   return (
