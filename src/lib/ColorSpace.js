@@ -12,6 +12,7 @@ export default class ColorSpace {
     this.components = components.map(component => {
       return new ColorComponent(component);
     });
+    this.componentsByName = _.keyBy(this.components, "name");
     this.representationNames = representations;
     this.representationsByName = this.representationNames.reduce(
       (obj, representationName) => {
@@ -89,7 +90,7 @@ export default class ColorSpace {
   convertColor(color) {
     const sourceColorSpace = colorSpaceRegistry[color.colorSpace.name];
     const targetColorSpace = sourceColorSpace[this.name];
-    const newValues = this._clampValues(targetColorSpace(color.values));
+    const newValues = this._normalizeValues(targetColorSpace(color.values));
     return this.buildColor(newValues);
   }
 
@@ -103,7 +104,7 @@ export default class ColorSpace {
   }
   */
 
-  _clampValues(values) {
+  _normalizeValues(values) {
     return _.zip(values, this.components).map(([value, component]) => {
       return component.normalize(value);
     });

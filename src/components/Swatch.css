@@ -1,11 +1,89 @@
 .swatch {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 2em;
-  text-align: center;
+  margin-right: 3.5em;
+  position: relative;
+  cursor: pointer;
 }
 
 .swatchContent {
   line-height: 1.5em;
+}
+
+.slider {
+  width: 200px;
+  appearance: none;
+  background: transparent;
+}
+
+.slider:focus {
+  outline: none;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  height: 14px;
+  width: 14px;
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  margin-top: -4.6px;
+}
+
+.slider::-moz-range-thumb {
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  height: 14px;
+  width: 14px;
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  margin-top: -4.6px;
+}
+
+.slider::-ms-thumb {
+  border: 1px solid rgba(0, 0, 0, 0.4);
+  height: 14px;
+  width: 14px;
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  margin-top: -4.6px;
+}
+
+.slider::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.slider::-moz-range-track {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.slider::-ms-track {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.horizontalSlider {
+  position: absolute;
+  bottom: -13px;
+  left: -2px;
+}
+
+.verticalSlider {
+  transform: rotate(-90deg);
+  position: absolute;
+  right: -116px;
+  top: 96px;
+}
+
+.cursor {
+  position: absolute;
+  pointer-events: none;
 }

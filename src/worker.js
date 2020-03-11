@@ -17,13 +17,13 @@ self.onmessage = event => {
       break;
     case "draw":
       const color = event.data.color;
-      const ratio = 255 / self.canvasSize;
+      const swatchToRgbRatio = 255 / self.canvasSize;
       const ctx = self.canvas.getContext("2d");
       const imageData = ctx.createImageData(self.canvasSize, self.canvasSize);
       for (let y = 0; y < self.canvasSize; y++) {
         for (let x = 0; x < self.canvasSize; x++) {
-          const g = x * ratio;
-          const b = y * ratio;
+          const g = x * swatchToRgbRatio;
+          const b = y * swatchToRgbRatio;
           setPixelOn(imageData, { x, y }, { r: color.r, g: g, b: b, a: 255 });
         }
       }

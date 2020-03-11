@@ -12,19 +12,41 @@ import styles from "./App.css";
 const LOCAL_STORAGE_KEY = "lastColorUpdated";
 
 function App() {
+  // TODO: Update these callbacks. Whose responsibility is it to update the
+  // color itself? Why are these called on*()?
+
   function onColorTupleComponentFieldUpdate(
     colorForm,
     component,
     newComponentValue
   ) {
-    _onColorUpdate(colorForm, { [component.name]: newComponentValue });
+    _onColorFormUpdate(colorForm, { [component.name]: newComponentValue });
   }
 
   function onColorStringFieldUpdate(colorForm, newString) {
-    _onColorUpdate(colorForm, newString);
+    _onColorFormUpdate(colorForm, newString);
   }
 
-  function _onColorUpdate(selectedColorForm, newData) {
+  function onColorComponentUpdate(color, component, newComponentValue) {
+    const newColor = color.cloneWith({ [component.name]: newComponentValue });
+    _onColorUpdate(newColor, {
+      representation: { name: "tuple" },
+      toSerializable: () => {
+        return newColor.toPlainObject();
+      }
+    });
+  }
+
+  function onColorUpdate(newColor) {
+    _onColorUpdate(newColor, {
+      representation: { name: "tuple" },
+      toSerializable: () => {
+        return newColor.toPlainObject();
+      }
+    });
+  }
+
+  function _onColorFormUpdate(selectedColorForm, newData) {
     const selectedColorSpaceName = selectedColorForm.colorSpace.name;
     const selectedRepresentationName = selectedColorForm.representation.name;
     const newSelectedColorForm = selectedColorForm.cloneWith(newData);
@@ -43,49 +65,54 @@ function App() {
     const result = newSelectedColorForm.attemptToBuildColor();
 
     if (result.ok) {
-      const newSelectedColor = result.value;
-      const nonSelectedColorSpaceNames = _.difference(
-        Object.keys(colorsByColorSpaceName),
-        [selectedColorSpaceName]
-      );
-      const newColorsByColorSpaceName = nonSelectedColorSpaceNames.reduce(
-        (obj, nonSelectedColorSpaceName) => {
-          const newUnselectedColor = newSelectedColor.convertTo(
-            nonSelectedColorSpaceName
-          );
-          return {
-            ...obj,
-            [nonSelectedColorSpaceName]: newUnselectedColor
-          };
-        },
-        { [selectedColorSpaceName]: newSelectedColor }
-      );
+      _onColorUpdate(result.value, newSelectedColorForm);
+    }
+  }
 
-      // We kind of already did this above, but just do it all over again
-      const newColorFormsByColorSpaceName = _.reduce(
-        colorFormsByColorSpaceName,
-        (obj, colorFormsByRepresentationName, colorSpaceName) => {
-          const newColorFormsByRepresentationName = _.reduce(
-            colorFormsByRepresentationName,
-            (obj2, colorForm, representationName) => {
-              return {
-                ...obj2,
-                [representationName]: colorForm.cloneFromColor(
-                  newColorsByColorSpaceName[colorSpaceName]
-                )
-              };
-            },
-            {}
-          );
-          return {
-            ...obj,
-            [colorSpaceName]: newColorFormsByRepresentationName
-          };
-        },
-        {}
-      );
+  function _onColorUpdate(newSelectedColor, newSelectedColorForm) {
+    const selectedColorSpaceName = newSelectedColor.colorSpace.name;
+    const nonSelectedColorSpaceNames = _.difference(
+      Object.keys(colorsByColorSpaceName),
+      [selectedColorSpaceName]
+    );
+    const newColorsByColorSpaceName = nonSelectedColorSpaceNames.reduce(
+      (obj, nonSelectedColorSpaceName) => {
+        const newUnselectedColor = newSelectedColor.convertTo(
+          nonSelectedColorSpaceName
+        );
+        return {
+          ...obj,
+          [nonSelectedColorSpaceName]: newUnselectedColor
+        };
+      },
+      { [selectedColorSpaceName]: newSelectedColor }
+    );
 
-      /*
+    // We kind of already did this above, but just do it all over again
+    const newColorFormsByColorSpaceName = _.reduce(
+      colorFormsByColorSpaceName,
+      (obj, colorFormsByRepresentationName, colorSpaceName) => {
+        const newColorFormsByRepresentationName = _.reduce(
+          colorFormsByRepresentationName,
+          (obj2, colorForm, representationName) => {
+            return {
+              ...obj2,
+              [representationName]: colorForm.cloneFromColor(
+                newColorsByColorSpaceName[colorSpaceName]
+              )
+            };
+          },
+          {}
+        );
+        return {
+          ...obj,
+          [colorSpaceName]: newColorFormsByRepresentationName
+        };
+      },
+      {}
+    );
+
+    /*
       console.log("newColorsByColorSpaceName", newColorsByColorSpaceName);
       console.log(
         "newColorFormsByColorSpaceName",
@@ -93,19 +120,18 @@ function App() {
       );
       */
 
-      setColorsByColorSpaceName(newColorsByColorSpaceName);
-      setLastColorUpdated(newSelectedColor);
-      setColorFormsByColorSpaceName(newColorFormsByColorSpaceName);
+    setColorsByColorSpaceName(newColorsByColorSpaceName);
+    setLastColorUpdated(newSelectedColor);
+    setColorFormsByColorSpaceName(newColorFormsByColorSpaceName);
 
-      localStorage.setItem(
-        LOCAL_STORAGE_KEY,
-        JSON.stringify({
-          colorSpaceName: selectedColorSpaceName,
-          representationName: selectedRepresentationName,
-          data: newSelectedColorForm.toSerializable()
-        })
-      );
-    }
+    localStorage.setItem(
+      LOCAL_STORAGE_KEY,
+      JSON.stringify({
+        colorSpaceName: selectedColorSpaceName,
+        representationName: newSelectedColorForm.representation.name,
+        data: newSelectedColorForm.toSerializable()
+      })
+    );
   }
 
   function onColorEditorLeave() {
@@ -198,7 +224,7 @@ function App() {
         const result = newColorForm.attemptToBuildColor();
 
         if (result.ok) {
-          _onColorUpdate(newColorForm, data);
+          _onColorFormUpdate(newColorForm, data);
         } else {
           console.error(
             "Corrupt save data in localStorage, cannot restore.",
@@ -275,8 +301,11 @@ function App() {
   return (
     <div className={styles.app}>
       <Swatch
+        colorSpacesByName={colorSpacesByName}
         colorsByColorSpaceName={colorsByColorSpaceName}
         lastColorUpdated={lastColorUpdated}
+        onColorComponentUpdate={onColorComponentUpdate}
+        onColorUpdate={onColorUpdate}
       />
       <div className={styles.colorEditors}>{colorSpaceGroups}</div>
     </div>

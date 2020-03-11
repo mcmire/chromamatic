@@ -2,9 +2,14 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   font-size: 16px;
-  margin: 2rem;
+  padding: 2rem;
   font-family: Menlo, Monaco, Consolas, "Courier New", Courier, "DejaVu Mono",
     "Liberation Mono", monospace;
 }
