@@ -211,17 +211,9 @@ function App() {
           `${colorSpaceName}.${representationName}`
         );
         const newColorForm = existingColorForm.cloneWith(data);
-        const result = newColorForm.attemptToBuildColor();
+        const color = newColorForm.forceBuildNormalizedColor();
 
-        if (result.ok) {
-          _onColorFormUpdate(newColorForm, data);
-        } else {
-          console.error(
-            "Corrupt save data in localStorage, cannot restore.",
-            saveData
-          );
-          localStorage.removeItem(LOCAL_STORAGE_KEY);
-        }
+        _onColorFormUpdate(newColorForm, color.toPlainObject());
       } catch (e) {
         console.error(
           "Corrupt save data in localStorage, cannot restore.",
