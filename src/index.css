@@ -13,3 +13,7 @@ body {
   font-family: Menlo, Monaco, Consolas, "Courier New", Courier, "DejaVu Mono",
     "Liberation Mono", monospace;
 }
+
+:not(output):-moz-ui-invalid {
+  box-shadow: none;
+}

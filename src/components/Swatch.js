@@ -7,7 +7,35 @@ const SWATCH_SIZE = 200;
 const CURSOR_SIZE = 17;
 const swatchToRgbRatio = 255 / SWATCH_SIZE;
 const rgbToSwatchRatio = SWATCH_SIZE / 255;
-const worker = new Worker("../worker.js");
+
+function setPixelOn(imageData, { x, y }, { r, g, b, a }) {
+  const index = (x + y * imageData.width) * 4;
+  imageData.data[index + 0] = r;
+  imageData.data[index + 1] = g;
+  imageData.data[index + 2] = b;
+  imageData.data[index + 3] = a;
+}
+
+function redrawCanvas(canvas, color) {
+  const swatchToRgbRatio = 255 / SWATCH_SIZE;
+  const ctx = canvas.getContext("2d");
+  const imageData = ctx.createImageData(SWATCH_SIZE, SWATCH_SIZE);
+  for (let y = 0; y < SWATCH_SIZE; y++) {
+    for (let x = 0; x < SWATCH_SIZE; x++) {
+      const g = x * swatchToRgbRatio;
+      const b = y * swatchToRgbRatio;
+      setPixelOn(
+        imageData,
+        { x, y },
+        { r: color.get("r"), g: g, b: b, a: 255 }
+      );
+    }
+  }
+  ctx.putImageData(imageData, 0, 0);
+}
+const redrawCanvasAfterThrottling = _.throttle(redrawCanvas, 100);
+
+let numOnChangeVerticalSliders = 0;
 
 export default function Swatch({
   colorSpacesByName,
@@ -17,6 +45,14 @@ export default function Swatch({
   onColorUpdate
 }) {
   function onChangeVerticalSlider(event) {
+    /*
+    console.log(
+      "onChangeVerticalSlider",
+      numOnChangeVerticalSliders,
+      color.toPlainObject()
+    );
+    */
+    numOnChangeVerticalSliders++;
     const value = event.target.value;
     const rgb = _.demand(colorSpacesByName, "rgb");
     onColorComponentUpdate(color, _.demand(rgb.componentsByName, "r"), value);
@@ -32,7 +68,9 @@ export default function Swatch({
 
   function onMouseUp(event) {
     if (event.button === 0) {
-      event.preventDefault();
+      // NOTE: Cannot preventDefault here because it prevent the slider from
+      // keeping its value in Firefox
+      //event.preventDefault();
       setMouseIsDown(false);
     }
   }
@@ -43,7 +81,7 @@ export default function Swatch({
   }
 
   function updateCursorPosition(event) {
-    const rect = onscreenCanvasRef.current.getBoundingClientRect();
+    const rect = canvasRef.current.getBoundingClientRect();
     const relativeX = event.pageX - rect.x;
     const relativeY = event.pageY - rect.y;
     const newColor = color.cloneWith({
@@ -51,14 +89,13 @@ export default function Swatch({
       b: relativeY * swatchToRgbRatio
     });
     const rgb = _.demand(colorSpacesByName, "rgb");
-    const newNormalizedColor = rgb.convertColor(newColor); // FIXME
+    const newNormalizedColor = rgb.convertColor(newColor); // this is a hack - FIXME
     setCursorPosition({ x: relativeX, y: relativeY });
     onColorUpdate(newNormalizedColor);
   }
 
   const color = lastColorUpdated.convertTo("rgb");
-  const onscreenCanvasRef = useRef(null);
-  const offscreenCanvasRef = useRef(null);
+  const canvasRef = useRef(null);
   const [cursorPosition, setCursorPosition] = useState({
     x: color.get("g") * rgbToSwatchRatio,
     y: color.get("b") * rgbToSwatchRatio
@@ -66,32 +103,14 @@ export default function Swatch({
   const [mouseIsDown, setMouseIsDown] = useState(false);
 
   useEffect(() => {
-    offscreenCanvasRef.current = onscreenCanvasRef.current.transferControlToOffscreen();
-    worker.postMessage(
-      {
-        message: "start",
-        canvas: offscreenCanvasRef.current,
-        canvasSize: SWATCH_SIZE
-      },
-      [offscreenCanvasRef.current]
-    );
+    //console.log("adding mouse up");
     document.body.addEventListener("mouseup", onMouseUp);
 
     return () => {
+      //console.log("removing mouse up");
       document.body.removeEventListener("mouseup", onMouseUp);
     };
   }, []);
-
-  useEffect(() => {
-    worker.postMessage({
-      message: "draw",
-      color: lastColorUpdated.convertTo("rgb").toPlainObject()
-    });
-    setCursorPosition({
-      x: color.get("g") * rgbToSwatchRatio,
-      y: color.get("b") * rgbToSwatchRatio
-    });
-  }, [lastColorUpdated]);
 
   useEffect(() => {
     if (mouseIsDown) {
@@ -105,12 +124,21 @@ export default function Swatch({
     };
   }, [mouseIsDown]);
 
+  useEffect(() => {
+    redrawCanvasAfterThrottling(canvasRef.current, color);
+
+    setCursorPosition({
+      x: color.get("g") * rgbToSwatchRatio,
+      y: color.get("b") * rgbToSwatchRatio
+    });
+  }, [lastColorUpdated]);
+
   return (
     <div className={styles.swatch}>
       <canvas
         width={SWATCH_SIZE}
         height={SWATCH_SIZE}
-        ref={onscreenCanvasRef}
+        ref={canvasRef}
         onMouseDown={onMouseDown}
       />
       <input

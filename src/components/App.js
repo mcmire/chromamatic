@@ -26,6 +26,8 @@ function App() {
   }
 
   function onColorComponentUpdate(color, component, newComponentValue) {
+    //console.log("onColorComponentUpdate");
+
     const newColor = color.cloneWith({ [component.name]: newComponentValue });
     _onColorUpdate(newColor, {
       representation: { name: "tuple" },
@@ -45,6 +47,8 @@ function App() {
   }
 
   function _onColorFormUpdate(selectedColorForm, newData) {
+    //console.log("onColorFormUpdate");
+
     const selectedColorSpaceName = selectedColorForm.colorSpace.name;
     const selectedRepresentationName = selectedColorForm.representation.name;
     const newSelectedColorForm = selectedColorForm.cloneWith(newData);

@@ -10,12 +10,16 @@
 
 .slider {
   width: 200px;
-  appearance: none;
+  /*appearance: none;*/
   background: transparent;
 }
 
 .slider:focus {
   outline: none;
+}
+
+.slider::-moz-focus-outer {
+  border: 0;
 }
 
 .slider::-webkit-slider-thumb {
@@ -81,6 +85,7 @@
   position: absolute;
   right: -116px;
   top: 96px;
+  height: 3px;
 }
 
 .cursor {
