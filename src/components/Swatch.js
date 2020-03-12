@@ -1,12 +1,12 @@
 import _ from "../vendor/lodash";
-import React, { useEffect, useLayoutEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 
 import styles from "./Swatch.css";
+import SwatchCursor from "./SwatchCursor";
 
 const SWATCH_SIZE = 200;
-const CURSOR_SIZE = 17;
-const swatchToRgbRatio = 255 / SWATCH_SIZE;
-const rgbToSwatchRatio = SWATCH_SIZE / 255;
+const SWATCH_TO_RGB_RATIO = 255 / SWATCH_SIZE;
+const RGB_TO_SWATCH_RATIO = SWATCH_SIZE / 255;
 
 function setPixelOn(imageData, { x, y }, { r, g, b, a }) {
   const index = (x + y * imageData.width) * 4;
@@ -17,13 +17,13 @@ function setPixelOn(imageData, { x, y }, { r, g, b, a }) {
 }
 
 function redrawCanvas(canvas, color) {
-  const swatchToRgbRatio = 255 / SWATCH_SIZE;
+  const SWATCH_TO_RGB_RATIO = 255 / SWATCH_SIZE;
   const ctx = canvas.getContext("2d");
   const imageData = ctx.createImageData(SWATCH_SIZE, SWATCH_SIZE);
   for (let y = 0; y < SWATCH_SIZE; y++) {
     for (let x = 0; x < SWATCH_SIZE; x++) {
-      const g = x * swatchToRgbRatio;
-      const b = y * swatchToRgbRatio;
+      const g = x * SWATCH_TO_RGB_RATIO;
+      const b = y * SWATCH_TO_RGB_RATIO;
       setPixelOn(
         imageData,
         { x, y },
@@ -84,21 +84,25 @@ export default function Swatch({
     const rect = canvasRef.current.getBoundingClientRect();
     const relativeX = event.pageX - rect.x;
     const relativeY = event.pageY - rect.y;
-    const newColor = color.cloneWith({
-      g: relativeX * swatchToRgbRatio,
-      b: relativeY * swatchToRgbRatio
-    });
-    const rgb = _.demand(colorSpacesByName, "rgb");
-    const newNormalizedColor = rgb.convertColor(newColor); // this is a hack - FIXME
+    const colorAtPosition = getColorAtPosition({ x: relativeX, y: relativeY });
     setCursorPosition({ x: relativeX, y: relativeY });
-    onColorUpdate(newNormalizedColor);
+    onColorUpdate(colorAtPosition);
   }
 
+  function getColorAtPosition({ x, y }) {
+    const newColor = color.cloneWith({
+      g: x * SWATCH_TO_RGB_RATIO,
+      b: y * SWATCH_TO_RGB_RATIO
+    });
+    return rgb.convertColor(newColor); // this is a hack - FIXME
+  }
+
+  const rgb = _.demand(colorSpacesByName, "rgb");
   const color = lastColorUpdated.convertTo("rgb");
   const canvasRef = useRef(null);
   const [cursorPosition, setCursorPosition] = useState({
-    x: color.get("g") * rgbToSwatchRatio,
-    y: color.get("b") * rgbToSwatchRatio
+    x: color.get("g") * RGB_TO_SWATCH_RATIO,
+    y: color.get("b") * RGB_TO_SWATCH_RATIO
   });
   const [mouseIsDown, setMouseIsDown] = useState(false);
 
@@ -128,8 +132,8 @@ export default function Swatch({
     redrawCanvasAfterThrottling(canvasRef.current, color);
 
     setCursorPosition({
-      x: color.get("g") * rgbToSwatchRatio,
-      y: color.get("b") * rgbToSwatchRatio
+      x: color.get("g") * RGB_TO_SWATCH_RATIO,
+      y: color.get("b") * RGB_TO_SWATCH_RATIO
     });
   }, [lastColorUpdated]);
 
@@ -149,32 +153,10 @@ export default function Swatch({
         onChange={onChangeVerticalSlider}
         value={color.get("r")}
       />
-      <svg
-        className={styles.cursor}
-        width={CURSOR_SIZE}
-        height={CURSOR_SIZE}
-        viewBox={`0 0 ${CURSOR_SIZE} ${CURSOR_SIZE}`}
-        style={{
-          left: `${cursorPosition.x - CURSOR_SIZE / 2 - 1}px`,
-          top: `${cursorPosition.y - CURSOR_SIZE / 2}px`,
-          color: "red"
-        }}
-      >
-        <circle
-          stroke="rgba(255, 255, 255, 1)"
-          strokeWidth="1px"
-          cx={CURSOR_SIZE / 2}
-          cy={CURSOR_SIZE / 2 + 1}
-          r={CURSOR_SIZE / 2 - 2}
-          fill="none"
-        />
-        <circle
-          cx={CURSOR_SIZE / 2}
-          cy={CURSOR_SIZE / 2 + 1}
-          r="1"
-          fill="rgba(255, 255, 255, 1)"
-        />
-      </svg>
+      <SwatchCursor
+        cursorPosition={cursorPosition}
+        colorAtPosition={getColorAtPosition(cursorPosition)}
+      />
     </div>
   );
 }

@@ -87,8 +87,3 @@
   top: 96px;
   height: 3px;
 }
-
-.cursor {
-  position: absolute;
-  pointer-events: none;
-}
