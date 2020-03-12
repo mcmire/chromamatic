@@ -13,6 +13,10 @@ export default function ColorTupleComponentField({
     onUpdate(colorForm, component, input.value);
   }
 
+  function onBlur(event) {
+    onLeave(colorForm);
+  }
+
   const classes = [styles.textField];
   if (colorForm.hasErrorsOn(component.name)) {
     classes.push(styles.hasErrors);
@@ -36,7 +40,7 @@ export default function ColorTupleComponentField({
         step={component.step}
         value={colorForm.get(component.name)}
         onChange={onChange}
-        onBlur={onLeave}
+        onBlur={onBlur}
         {...extraProps}
       />
       <span className={styles.suffix}>{suffix}</span>

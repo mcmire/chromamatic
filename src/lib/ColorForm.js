@@ -14,10 +14,14 @@ export default class ColorForm {
     );
   }
 
-  forceBuildNormalizedColor() {
-    throw new Error(
-      `${this.constructor.name} must implement #forceBuildNormalizedColor`
-    );
+  buildColor(...args) {
+    const result = this.attemptToBuildColor(...args);
+
+    if (result.ok) {
+      return result.value;
+    } else {
+      throw result.value;
+    }
   }
 
   isValid() {

@@ -13,11 +13,13 @@ export default class ColorTupleForm extends ColorForm {
     return new ColorRepresentation("tuple");
   }
 
-  attemptToBuildColor() {
+  attemptToBuildColor({ normalize = false } = {}) {
     let color;
 
     try {
-      return this._succeedWith(this.colorSpace.buildColor(this.data));
+      return this._succeedWith(
+        this.colorSpace.buildColor(this.data, { normalize })
+      );
     } catch (error) {
       if (error instanceof InvalidColorError) {
         return this._failWith(error);
@@ -30,20 +32,6 @@ export default class ColorTupleForm extends ColorForm {
   hasErrorsOn(componentName) {
     const result = this.attemptToBuildColor();
     return !result.ok && result.value.componentName === componentName;
-  }
-
-  forceBuildNormalizedColor() {
-    const normalizedComponents = this.colorSpace.components.reduce(
-      (obj, component) => {
-        return {
-          ...obj,
-          [component.name]: component.normalize(this.get(component.name))
-        };
-      },
-      {}
-    );
-
-    return this.colorSpace.buildColor(normalizedComponents);
   }
 
   cloneWith(updatedComponents) {

@@ -13,6 +13,10 @@ export default function ColorStringField({
     onUpdate(colorForm, input.value);
   }
 
+  function onBlur(event) {
+    onLeave(colorForm);
+  }
+
   const classes = [
     styles.colorStringField,
     styles[`${colorForm.representation.name}Field`]
@@ -27,7 +31,7 @@ export default function ColorStringField({
       type="text"
       value={colorForm.data}
       onChange={onChange}
-      onBlur={onLeave}
+      onBlur={onBlur}
     />
   );
 }

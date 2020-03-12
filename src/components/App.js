@@ -91,32 +91,16 @@ function App() {
     );
 
     // We kind of already did this above, but just do it all over again
-    const newColorFormsByColorSpaceName = _.reduce(
-      colorFormsByColorSpaceName,
-      (obj, colorFormsByRepresentationName, colorSpaceName) => {
-        const newColorFormsByRepresentationName = _.reduce(
-          colorFormsByRepresentationName,
-          (obj2, colorForm, representationName) => {
-            return {
-              ...obj2,
-              [representationName]: colorForm.cloneFromColor(
-                newColorsByColorSpaceName[colorSpaceName]
-              )
-            };
-          },
-          {}
+    const newColorFormsByColorSpaceName = _updateColorFormsByColorSpaceName(
+      (colorSpaceName, representationName, colorForm) => {
+        return colorForm.cloneFromColor(
+          newColorsByColorSpaceName[colorSpaceName]
         );
-        return {
-          ...obj,
-          [colorSpaceName]: newColorFormsByRepresentationName
-        };
-      },
-      {}
+      }
     );
-
-    setColorsByColorSpaceName(newColorsByColorSpaceName);
-    setLastColorUpdated(newSelectedColor);
     setColorFormsByColorSpaceName(newColorFormsByColorSpaceName);
+    setLastColorUpdated(newSelectedColor);
+    setColorsByColorSpaceName(newColorsByColorSpaceName);
 
     localStorage.setItem(
       LOCAL_STORAGE_KEY,
@@ -128,29 +112,45 @@ function App() {
     );
   }
 
-  function onColorEditorLeave() {
-    /*
-    const allColorForms = _.flatten(
-      _.map(
-        colorFormsByColorSpaceName,
-        (colorFormsByRepresentationName, colorSpaceName) =>
-          _.values(colorFormsByRepresentationName)
-      )
+  function onColorEditorLeave(selectedColorForm) {
+    const allColorForms = _.flatMap(
+      colorFormsByColorSpaceName,
+      (colorFormsByRepresentationName, colorSpaceName) =>
+        _.values(colorFormsByRepresentationName)
     );
     const allColorFormsAreValid = _.every(allColorForms, "isValid");
 
-    if (allColorsAreValid) {
-      const newColorsByColorSpaceName = _.reduce(
-        colorsByColorSpaceName,
-        (obj, color, colorSpaceName) => {
-          return { ...obj, [colorSpaceName]: color.withNormalizedData() };
-        },
-        {}
+    if (allColorFormsAreValid) {
+      const normalizedColor = selectedColorForm.buildColor({ normalize: true });
+      const normalizedColorForm = selectedColorForm.cloneFromColor(
+        normalizedColor
       );
-
-      setColorsByColorSpaceName(newColorsByColorSpaceName);
+      _onColorUpdate(normalizedColor, normalizedColorForm);
     }
-    */
+  }
+
+  function _updateColorFormsByColorSpaceName(fn) {
+    return _.reduce(
+      colorFormsByColorSpaceName,
+      (obj, colorFormsByRepresentationName, colorSpaceName) => {
+        const newColorFormsByRepresentationName = _.reduce(
+          colorFormsByRepresentationName,
+          (obj2, colorForm, representationName) => {
+            return {
+              ...obj2,
+              [representationName]: fn(
+                colorSpaceName,
+                representationName,
+                colorForm
+              )
+            };
+          },
+          {}
+        );
+        return { ...obj, [colorSpaceName]: newColorFormsByRepresentationName };
+      },
+      {}
+    );
   }
 
   function _buildInitialState() {
@@ -215,7 +215,7 @@ function App() {
           `${colorSpaceName}.${representationName}`
         );
         const newColorForm = existingColorForm.cloneWith(data);
-        const color = newColorForm.forceBuildNormalizedColor();
+        const color = newColorForm.buildColor();
 
         _onColorFormUpdate(newColorForm, color.toPlainObject());
       } catch (e) {

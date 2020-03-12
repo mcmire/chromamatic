@@ -25,6 +25,10 @@ export default class ColorSpace {
     );
   }
 
+  get componentNames() {
+    return this.components.map(component => component.name);
+  }
+
   validateColorComponents(givenComponents) {
     if (!_.isPlainObject(givenComponents)) {
       throw new Error("Given color components should be an object");
@@ -68,23 +72,35 @@ export default class ColorSpace {
     return this.buildColor(_.times(this.components.length, _.constant(0)));
   }
 
-  buildColor(valuesOrData) {
+  buildColor(valuesOrData, { normalize = false } = {}) {
     const data = _.isPlainObject(valuesOrData)
       ? valuesOrData
       : _.fromPairs(_.zip(this.componentNames, valuesOrData));
+    const normalizedData = normalize ? this._normalizeData(data) : data;
 
-    return new Color(this, data);
+    return new Color(this, normalizedData);
   }
 
   convertColor(color) {
     const sourceColorSpace = colorSpaceRegistry[color.colorSpace.name];
     const targetColorSpace = sourceColorSpace[this.name];
     const newValues = this._normalizeValues(targetColorSpace(color.values));
+
     return this.buildColor(newValues);
   }
 
-  get componentNames() {
-    return this.components.map(component => component.name);
+  _normalizeData(data) {
+    return _.reduce(
+      data,
+      (obj, value, name) => {
+        const component = _.demand(this.componentsByName, name);
+        return {
+          ...obj,
+          [name]: component.normalize(value)
+        };
+      },
+      {}
+    );
   }
 
   _normalizeValues(values) {
