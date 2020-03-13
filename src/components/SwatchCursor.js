@@ -17,6 +17,8 @@ export default function SwatchCursor({ cursorPosition, colorAtPosition }) {
         left: `${cursorPosition.x - CURSOR_SIZE / 2 - 1}px`,
         top: `${cursorPosition.y - CURSOR_SIZE / 2}px`
       }}
+      version="1.1"
+      xmlns="http://www.w3.org/2000/svg"
     >
       <circle
         stroke={cursorColor}

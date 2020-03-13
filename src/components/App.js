@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import _ from "../vendor/lodash";
 
 import colorSpacesByName, { COLOR_SPACE_NAMES } from "../lib/colorSpacesByName";
+import ColorSpaceGroupIndicator from "./ColorSpaceGroupIndicator";
 import ColorSpaceGroup from "./ColorSpaceGroup";
 import Swatch from "./Swatch";
 
@@ -114,6 +115,29 @@ function App() {
     }
   }
 
+  function onMouseOverColorSpaceName(colorSpace) {
+    setHighlightedColorSpace(colorSpace);
+    setLastHighlightedColorSpace(colorSpace);
+  }
+
+  function onMouseOutColorSpaceName() {
+    setHighlightedColorSpace(null);
+    setLastHighlightedColorSpace(selectedColorSpace);
+  }
+
+  function onSelectColorSpace(colorSpace) {
+    //setSelectedColorSpace(colorSpace);
+    onColorUpdate(_.demand(colorsByColorSpaceName, colorSpace.name));
+    setLastHighlightedColorSpace(colorSpace);
+  }
+
+  function onAxesUpdate(axes) {
+    setAxesByColorSpaceName({
+      ...axesByColorSpaceName,
+      [selectedColorSpace.name]: axes
+    });
+  }
+
   function _updateColorFormsByColorSpaceName(fn) {
     return _.reduce(
       colorFormsByColorSpaceName,
@@ -173,9 +197,16 @@ function App() {
       {}
     );
 
-    initialState.lastColorUpdated = initialState.colorsByColorSpaceName["rgb"];
+    initialState.lastColorUpdated = _.demand(
+      initialState.colorsByColorSpaceName,
+      "rgb"
+    );
 
-    initialState.axes = { x: "g", y: "b" };
+    initialState.axesByColorSpaceName = {
+      rgb: { x: "g", y: "b" },
+      hsl: { x: "h", y: "s" },
+      hsluv: { x: "h", y: "s" }
+    };
 
     return initialState;
   }
@@ -188,7 +219,7 @@ function App() {
           colorSpaceName: lastColorUpdated.colorSpace.name,
           data: lastColorUpdated.toPlainObject()
         },
-        axes: axes
+        axesByColorSpaceName: axesByColorSpaceName
       })
     );
   }
@@ -200,7 +231,7 @@ function App() {
       try {
         const {
           color: { colorSpaceName, data },
-          axes
+          axesByColorSpaceName
         } = JSON.parse(saveData);
 
         const newColor = colorsByColorSpaceName[colorSpaceName].cloneWith(data);
@@ -210,7 +241,7 @@ function App() {
             return newColor.toPlainObject();
           }
         });
-        setAxes(axes);
+        setAxesByColorSpaceName(axesByColorSpaceName);
       } catch (e) {
         console.error(
           "Corrupt save data in localStorage, cannot restore.",
@@ -232,10 +263,17 @@ function App() {
   const [lastColorUpdated, setLastColorUpdated] = useState(
     initialState.lastColorUpdated
   );
-  const [axes, setAxes] = useState(initialState.axes);
+  const [axesByColorSpaceName, setAxesByColorSpaceName] = useState(
+    initialState.axesByColorSpaceName
+  );
+  const [highlightedColorSpace, setHighlightedColorSpace] = useState(null);
+  const [lastHighlightedColorSpace, setLastHighlightedColorSpace] = useState(
+    null
+  );
+  const selectedColorSpace = lastColorUpdated.colorSpace;
 
   useEffect(_loadSaveData, []);
-  useEffect(_persistSaveData, [lastColorUpdated, axes]);
+  useEffect(_persistSaveData, [lastColorUpdated, axesByColorSpaceName]);
 
   const colorSpaceGroups = _.map(COLOR_SPACE_NAMES, (colorSpaceName, index) => {
     const colorSpace = _.demand(colorSpacesByName, colorSpaceName);
@@ -243,6 +281,10 @@ function App() {
       colorFormsByColorSpaceName,
       colorSpaceName
     );
+    const isHighlighted =
+      highlightedColorSpace != null &&
+      highlightedColorSpace.name === colorSpaceName;
+    const isSelected = colorSpace.name === selectedColorSpace.name;
     return (
       <ColorSpaceGroup
         key={index}
@@ -251,6 +293,11 @@ function App() {
         onColorTupleComponentFieldUpdate={onColorTupleComponentFieldUpdate}
         onColorStringFieldUpdate={onColorStringFieldUpdate}
         onColorEditorLeave={onColorEditorLeave}
+        onMouseOverColorSpaceName={onMouseOverColorSpaceName}
+        onMouseOutColorSpaceName={onMouseOutColorSpaceName}
+        onSelectColorSpace={onSelectColorSpace}
+        isHighlighted={isHighlighted}
+        isSelected={isSelected}
       />
     );
   });
@@ -261,10 +308,10 @@ function App() {
         colorSpacesByName={colorSpacesByName}
         colorsByColorSpaceName={colorsByColorSpaceName}
         lastColorUpdated={lastColorUpdated}
-        axes={axes}
+        axes={_.demand(axesByColorSpaceName, selectedColorSpace.name)}
         onColorComponentUpdate={onColorComponentUpdate}
         onColorUpdate={onColorUpdate}
-        onAxesUpdate={setAxes}
+        onAxesUpdate={onAxesUpdate}
       />
       <div className={styles.colorEditors}>{colorSpaceGroups}</div>
     </div>

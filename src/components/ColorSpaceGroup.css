@@ -1,10 +1,45 @@
-.colorFieldGroup {
-  composes: column from "./App.css";
+.colorSpaceGroup {
+  border-radius: 5px;
+  padding: 0 10px;
 }
 
-.colorName {
-  width: 20em;
-  color: gray;
+.colorSpaceGroupUnselected > .colorSpaceName,
+.colorSpaceGroupUnselected > .elements {
+  opacity: 0.5;
+}
+
+.colorSpaceGroupHighlighted > .colorSpaceName {
+  opacity: 1;
+}
+
+.colorSpaceGroupSelected {
+}
+
+.colorSpaceName {
+  composes: column from "./App.css";
+
+  font-weight: bold;
+  display: inline-block;
+  width: 7em;
+  color: hsl(216, 90%, 45%);
+  text-decoration: none;
+  line-height: 45px;
+  padding-left: 0.75em;
+}
+
+.colorSpaceGroupHighlighted > .colorSpaceName {
+  background: url("../assets/color-space-group-indicator.svg") no-repeat left
+    center;
+}
+
+.colorSpaceGroupSelected > .colorSpaceName {
+  background: url("../assets/color-space-group-indicator-selected.svg")
+    no-repeat left center;
+  color: white;
+}
+
+.colorFieldGroup {
+  composes: column from "./App.css";
 }
 
 .labeledInput {

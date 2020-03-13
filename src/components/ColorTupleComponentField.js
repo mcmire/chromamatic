@@ -5,9 +5,14 @@ import styles from "./ColorTupleComponentField.css";
 export default function ColorTupleComponentField({
   colorForm,
   component,
+  onFocus,
   onUpdate,
   onLeave
 }) {
+  function _onFocus(event) {
+    onFocus(colorForm.colorSpace);
+  }
+
   function onChange(event) {
     const input = event.target;
     onUpdate(colorForm, component, input.value);
@@ -39,6 +44,7 @@ export default function ColorTupleComponentField({
         type="number"
         step={component.step}
         value={colorForm.get(component.name)}
+        onFocus={_onFocus}
         onChange={onChange}
         onBlur={onBlur}
         {...extraProps}
