@@ -2,6 +2,10 @@
   composes: textField from "./App.css";
 }
 
+.numberField {
+  text-align: right;
+}
+
 .suffix {
   width: 1em;
 }

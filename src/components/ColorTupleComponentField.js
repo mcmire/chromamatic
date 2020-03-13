@@ -17,7 +17,7 @@ export default function ColorTupleComponentField({
     onLeave(colorForm);
   }
 
-  const classes = [styles.textField];
+  const classes = [styles.textField, styles.numberField];
   if (colorForm.hasErrorsOn(component.name)) {
     classes.push(styles.hasErrors);
   }
