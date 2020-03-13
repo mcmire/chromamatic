@@ -7,7 +7,7 @@ import Swatch from "./Swatch";
 
 import styles from "./App.css";
 
-const LOCAL_STORAGE_KEY = "lastColorUpdated";
+const LOCAL_STORAGE_KEY = "saveData";
 
 function App() {
   // TODO: Update these callbacks. Whose responsibility is it to update the
@@ -93,15 +93,6 @@ function App() {
     setColorFormsByColorSpaceName(newColorFormsByColorSpaceName);
 
     setLastColorUpdated(selectedColor);
-
-    localStorage.setItem(
-      LOCAL_STORAGE_KEY,
-      JSON.stringify({
-        colorSpaceName: selectedColor.colorSpace.name,
-        representationName: selectedColorForm.representation.name,
-        data: selectedColorForm.toSerializable()
-      })
-    );
   }
 
   function onColorEditorLeave(selectedColorForm) {
@@ -182,7 +173,53 @@ function App() {
       {}
     );
 
+    initialState.lastColorUpdated = initialState.colorsByColorSpaceName["rgb"];
+
+    initialState.axes = { x: "g", y: "b" };
+
     return initialState;
+  }
+
+  function _persistSaveData() {
+    localStorage.setItem(
+      LOCAL_STORAGE_KEY,
+      JSON.stringify({
+        color: {
+          colorSpaceName: lastColorUpdated.colorSpace.name,
+          data: lastColorUpdated.toPlainObject()
+        },
+        axes: axes
+      })
+    );
+  }
+
+  function _loadSaveData() {
+    const saveData = localStorage.getItem(LOCAL_STORAGE_KEY);
+
+    if (saveData != null) {
+      try {
+        const {
+          color: { colorSpaceName, data },
+          axes
+        } = JSON.parse(saveData);
+
+        const newColor = colorsByColorSpaceName[colorSpaceName].cloneWith(data);
+        _onColorUpdate(newColor, {
+          representation: { name: "tuple" },
+          toSerializable: () => {
+            return newColor.toPlainObject();
+          }
+        });
+        setAxes(axes);
+      } catch (e) {
+        console.error(
+          "Corrupt save data in localStorage, cannot restore.",
+          saveData,
+          e.message
+        );
+        localStorage.removeItem(LOCAL_STORAGE_KEY);
+      }
+    }
   }
 
   const initialState = _buildInitialState();
@@ -193,35 +230,12 @@ function App() {
     initialState.colorFormsByColorSpaceName
   );
   const [lastColorUpdated, setLastColorUpdated] = useState(
-    _.demand(colorsByColorSpaceName, COLOR_SPACE_NAMES[0])
+    initialState.lastColorUpdated
   );
+  const [axes, setAxes] = useState(initialState.axes);
 
-  useEffect(() => {
-    const saveData = localStorage.getItem(LOCAL_STORAGE_KEY);
-
-    if (saveData != null) {
-      try {
-        const { colorSpaceName, representationName, data } = JSON.parse(
-          saveData
-        );
-        const existingColorForm = _.demand(
-          colorFormsByColorSpaceName,
-          `${colorSpaceName}.${representationName}`
-        );
-        const newColorForm = existingColorForm.cloneWith(data);
-        const color = newColorForm.buildColor();
-
-        _onColorFormUpdate(newColorForm, color.toPlainObject());
-      } catch (e) {
-        console.error(
-          "Corrupt save data in localStorage, cannot restore.",
-          saveData,
-          e.message
-        );
-        localStorage.removeItem(LOCAL_STORAGE_KEY);
-      }
-    }
-  }, []);
+  useEffect(_loadSaveData, []);
+  useEffect(_persistSaveData, [lastColorUpdated, axes]);
 
   const colorSpaceGroups = _.map(COLOR_SPACE_NAMES, (colorSpaceName, index) => {
     const colorSpace = _.demand(colorSpacesByName, colorSpaceName);
@@ -247,8 +261,10 @@ function App() {
         colorSpacesByName={colorSpacesByName}
         colorsByColorSpaceName={colorsByColorSpaceName}
         lastColorUpdated={lastColorUpdated}
+        axes={axes}
         onColorComponentUpdate={onColorComponentUpdate}
         onColorUpdate={onColorUpdate}
+        onAxesUpdate={setAxes}
       />
       <div className={styles.colorEditors}>{colorSpaceGroups}</div>
     </div>

@@ -1,0 +1,29 @@
+.selectors {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.axesSelector {
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  border-left: 1px solid rgba(0, 0, 0, 0.2);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.7);
+  border-right: 1px solid rgba(0, 0, 0, 0.6);
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 0.9em;
+  background: hsl(0, 0%, 97%);
+  padding: 2px 4px;
+  color: hsl(0, 0%, 15%);
+  cursor: pointer;
+  outline: none;
+}
+
+.axesSelector:active,
+.axesSelectorActive {
+  background: hsl(0, 0%, 87%);
+  border-top: 1px solid rgba(0, 0, 0, 0.6);
+  border-left: 1px solid rgba(0, 0, 0, 0.5);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  border-right: 1px solid rgba(0, 0, 0, 0.3);
+}
