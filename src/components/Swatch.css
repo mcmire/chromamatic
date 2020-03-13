@@ -11,6 +11,7 @@
 }
 
 .slider {
+  appearance: none;
   width: 200px;
   background: transparent;
   transform: rotate(-90deg);
