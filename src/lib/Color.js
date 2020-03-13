@@ -53,11 +53,13 @@ export default class Color {
     }
   }
 
-  toFormattedString({ hex = false } = {}) {
+  toFormattedString({ hex = false, normalize = false } = {}) {
     if (hex) {
-      return stringifyColor(this.convertTo("rgb").values, "hex");
+      return stringifyColor(this.convertTo("rgb").values, "hex", {
+        normalize: normalize
+      });
     } else {
-      return stringifyColor(this.values, this.colorSpace.name);
+      return stringifyColor(this.values, this.colorSpace.name, { normalize });
     }
   }
 

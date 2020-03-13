@@ -46,9 +46,10 @@ export default class ColorStringForm extends ColorForm {
     return new this.constructor(this.colorSpace, this.representation, data);
   }
 
-  cloneFromColor(color) {
+  cloneFromColor(color, { normalize = false } = {}) {
     const data = color.toFormattedString({
-      hex: this.representation.name === "hex"
+      hex: this.representation.name === "hex",
+      normalize: normalize
     });
     return this.cloneWith(data);
   }

@@ -31,12 +31,16 @@ export function parseColor(colorSpace, input) {
   }
 }
 
-export function stringifyColor(input, type) {
+export function stringifyColor(input, type, { normalize = false } = {}) {
   try {
     const stringifiedColor = colorStringify(input, type);
 
     if (stringifiedColor != null) {
-      if (type === "hex" && /^#[A-Fa-f0-9]{3}$/.test(stringifiedColor)) {
+      if (
+        type === "hex" &&
+        /^#[A-Fa-f0-9]{3}$/.test(stringifiedColor) &&
+        normalize
+      ) {
         const digits = stringifiedColor.slice(1);
         return (
           "#" +

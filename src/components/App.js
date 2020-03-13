@@ -47,67 +47,59 @@ function App() {
   }
 
   function _onColorFormUpdate(selectedColorForm, newData) {
-    //console.log("onColorFormUpdate");
-
-    const selectedColorSpaceName = selectedColorForm.colorSpace.name;
-    const selectedRepresentationName = selectedColorForm.representation.name;
+    const colorSpaceName = selectedColorForm.colorSpace.name;
+    const representationName = selectedColorForm.representation.name;
     const newSelectedColorForm = selectedColorForm.cloneWith(newData);
-
-    setColorFormsByColorSpaceName({
-      ...colorFormsByColorSpaceName,
-      [selectedColorSpaceName]: {
-        ..._.demand(
-          colorFormsByColorSpaceName,
-          newSelectedColorForm.colorSpace.name
-        ),
-        [newSelectedColorForm.representation.name]: newSelectedColorForm
-      }
-    });
-
     const result = newSelectedColorForm.attemptToBuildColor();
 
     if (result.ok) {
       _onColorUpdate(result.value, newSelectedColorForm);
+    } else {
+      setColorFormsByColorSpaceName({
+        ...colorFormsByColorSpaceName,
+        [colorSpaceName]: {
+          ...colorFormsByColorSpaceName[colorSpaceName],
+          [representationName]: newSelectedColorForm
+        }
+      });
     }
   }
 
-  function _onColorUpdate(newSelectedColor, newSelectedColorForm) {
-    const selectedColorSpaceName = newSelectedColor.colorSpace.name;
-    const nonSelectedColorSpaceNames = _.difference(
+  function _onColorUpdate(
+    selectedColor,
+    selectedColorForm,
+    { normalize = false } = {}
+  ) {
+    const newColorsByColorSpaceName = _.reduce(
       Object.keys(colorsByColorSpaceName),
-      [selectedColorSpaceName]
-    );
-    const newColorsByColorSpaceName = nonSelectedColorSpaceNames.reduce(
-      (obj, nonSelectedColorSpaceName) => {
-        const newUnselectedColor = newSelectedColor.convertTo(
-          nonSelectedColorSpaceName
-        );
+      (obj, colorSpaceName) => {
         return {
           ...obj,
-          [nonSelectedColorSpaceName]: newUnselectedColor
+          [colorSpaceName]: selectedColor.convertTo(colorSpaceName)
         };
       },
-      { [selectedColorSpaceName]: newSelectedColor }
+      {}
     );
+    setColorsByColorSpaceName(newColorsByColorSpaceName);
 
-    // We kind of already did this above, but just do it all over again
     const newColorFormsByColorSpaceName = _updateColorFormsByColorSpaceName(
       (colorSpaceName, representationName, colorForm) => {
         return colorForm.cloneFromColor(
-          newColorsByColorSpaceName[colorSpaceName]
+          newColorsByColorSpaceName[colorSpaceName],
+          { normalize }
         );
       }
     );
     setColorFormsByColorSpaceName(newColorFormsByColorSpaceName);
-    setLastColorUpdated(newSelectedColor);
-    setColorsByColorSpaceName(newColorsByColorSpaceName);
+
+    setLastColorUpdated(selectedColor);
 
     localStorage.setItem(
       LOCAL_STORAGE_KEY,
       JSON.stringify({
-        colorSpaceName: selectedColorSpaceName,
-        representationName: newSelectedColorForm.representation.name,
-        data: newSelectedColorForm.toSerializable()
+        colorSpaceName: selectedColor.colorSpace.name,
+        representationName: selectedColorForm.representation.name,
+        data: selectedColorForm.toSerializable()
       })
     );
   }
@@ -122,10 +114,12 @@ function App() {
 
     if (allColorFormsAreValid) {
       const normalizedColor = selectedColorForm.buildColor({ normalize: true });
+      // TODO: This may not even be necessary
       const normalizedColorForm = selectedColorForm.cloneFromColor(
-        normalizedColor
+        normalizedColor,
+        { normalize: true }
       );
-      _onColorUpdate(normalizedColor, normalizedColorForm);
+      _onColorUpdate(normalizedColor, normalizedColorForm, { normalize: true });
     }
   }
 
