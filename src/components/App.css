@@ -8,6 +8,7 @@
 
 .colorEditors {
   flex-grow: 1;
+  margin-top: 1.5em;
 }
 
 .textField {
