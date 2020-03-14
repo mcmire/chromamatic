@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from "react";
 import colorSpaceRegistry from "color-space";
 
 import benchmark from "../lib/benchmark";
+import { demand } from "../lib/utils";
 import SwatchAxesSelectors from "./SwatchAxesSelectors";
 import SwatchCursor from "./SwatchCursor";
 
@@ -12,8 +13,8 @@ const SWATCH_SIZE = 200;
 const RGB_TO_SWATCH_RATIO = SWATCH_SIZE / 255;
 
 function buildScalesByAxis(axes, componentsByName) {
-  const xComponent = _.demand(componentsByName, axes.x);
-  const yComponent = _.demand(componentsByName, axes.y);
+  const xComponent = demand(componentsByName, axes.x);
+  const yComponent = demand(componentsByName, axes.y);
   return {
     x: {
       swatchToComponent: xComponent.max / SWATCH_SIZE,
@@ -34,56 +35,6 @@ function setPixelOn(imageData, { x, y }, { r, g, b, a }) {
   imageData.data[index + 3] = a;
 }
 
-function redrawCanvas(canvas, color, axes, sliderAxis, scalesByAxis) {
-  benchmark.measuring("buildColor", "convertColor", "setPixelOn", () => {
-    const ctx = canvas.getContext("2d");
-    const imageData = ctx.createImageData(SWATCH_SIZE, SWATCH_SIZE);
-    const rgbConverter = colorSpaceRegistry[color.colorSpace.name]["rgb"];
-
-    for (let y = 0; y < SWATCH_SIZE; y++) {
-      for (let x = 0; x < SWATCH_SIZE; x++) {
-        const newColor = benchmark.time("buildColor", () => {
-          return color
-            .cloneWith(
-              {
-                [axes.x]: x * scalesByAxis.x.swatchToComponent,
-                [axes.y]: y * scalesByAxis.y.swatchToComponent
-              },
-              { validate: false }
-            )
-            .convertTo("rgb");
-        });
-
-        benchmark.time("setPixelOn", () => {
-          setPixelOn(
-            imageData,
-            { x, y },
-            { ...newColor.toPlainObject(), a: 255 }
-          );
-        });
-      }
-    }
-
-    ctx.putImageData(imageData, 0, 0);
-  });
-}
-const redrawCanvasAfterThrottling = _.throttle(redrawCanvas, 100);
-
-function determineCursorPositionFrom(color, axes, scalesByAxis) {
-  return _.reduce(
-    axes,
-    (obj, colorComponentName, axisName) => {
-      return {
-        ...obj,
-        [axisName]:
-          color.get(colorComponentName) *
-          scalesByAxis[axisName].componentToSwatch
-      };
-    },
-    {}
-  );
-}
-
 export default function Swatch({
   colorSpacesByName,
   colorsByColorSpaceName,
@@ -97,7 +48,7 @@ export default function Swatch({
     const value = event.target.value;
     onColorComponentUpdate(
       lastColorUpdated,
-      _.demand(selectedColorSpace.componentsByName, sliderAxis),
+      demand(selectedColorSpace.componentsByName, sliderAxis),
       value
     );
   }
@@ -127,17 +78,72 @@ export default function Swatch({
     const rect = canvasRef.current.getBoundingClientRect();
     const relativeX = event.pageX - rect.x;
     const relativeY = event.pageY - rect.y;
-    setCursorPosition({ x: relativeX, y: relativeY });
-    onColorUpdate(determineColorAtPosition({ x: relativeX, y: relativeY }));
+    onColorUpdate(mapCursorPositionToColor({ x: relativeX, y: relativeY }));
   }
 
-  function determineColorAtPosition({ x, y }) {
-    const newColor = lastColorUpdated.cloneWith({
-      [axes.x]: x * scalesByAxis.x.swatchToComponent,
-      [axes.y]: y * scalesByAxis.y.swatchToComponent
-    });
-    return selectedColorSpace.convertColor(newColor); // this is a hack to normalize - FIXME
+  function mapColorToCursorPosition(color) {
+    const axisNames = Object.keys(axes);
+    return _.reduce(
+      axes,
+      (obj, colorComponentName, axisName) => {
+        const value =
+          color.get(colorComponentName) *
+          scalesByAxis[axisName].componentToSwatch;
+        return {
+          ...obj,
+          [axisName]: axisName === axisNames[1] ? SWATCH_SIZE - value : value
+        };
+      },
+      {}
+    );
   }
+
+  function mapCursorPositionToColor(
+    { x, y },
+    { finalColorSpace = lastColorUpdated.colorSpace, validate = true } = {}
+  ) {
+    const newColor = lastColorUpdated.cloneWith(
+      {
+        [axes.x]: x * scalesByAxis.x.swatchToComponent,
+        [axes.y]: (SWATCH_SIZE - y) * scalesByAxis.y.swatchToComponent
+      },
+      { validate }
+    );
+    return finalColorSpace.convertColor(newColor);
+  }
+
+  function redrawCanvas() {
+    benchmark.measuring("buildColor", "convertColor", "setPixelOn", () => {
+      const ctx = canvasRef.current.getContext("2d");
+      const imageData = ctx.createImageData(SWATCH_SIZE, SWATCH_SIZE);
+      const rgbConverter = colorSpaceRegistry[selectedColorSpace.name]["rgb"];
+
+      for (let y = 0; y < SWATCH_SIZE; y++) {
+        for (let x = 0; x < SWATCH_SIZE; x++) {
+          const newColor = benchmark.time("buildColor", () => {
+            return mapCursorPositionToColor(
+              { x, y },
+              {
+                finalColorSpace: demand(colorSpacesByName, "rgb"),
+                validate: false
+              }
+            );
+          });
+
+          benchmark.time("setPixelOn", () => {
+            setPixelOn(
+              imageData,
+              { x, y },
+              { ...newColor.toPlainObject(), a: 255 }
+            );
+          });
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+    });
+  }
+  const redrawCanvasAfterThrottling = _.throttle(redrawCanvas, 100);
 
   const selectedColorSpace = lastColorUpdated.colorSpace;
   const scalesByAxis = buildScalesByAxis(
@@ -146,7 +152,7 @@ export default function Swatch({
   );
   const canvasRef = useRef(null);
   const [cursorPosition, setCursorPosition] = useState(
-    determineCursorPositionFrom(lastColorUpdated, axes, scalesByAxis)
+    mapColorToCursorPosition(lastColorUpdated, axes, scalesByAxis)
   );
   const [mouseIsDown, setMouseIsDown] = useState(false);
 
@@ -177,20 +183,14 @@ export default function Swatch({
   }, [mouseIsDown]);
 
   useEffect(() => {
-    setCursorPosition(
-      determineCursorPositionFrom(lastColorUpdated, axes, scalesByAxis)
-    );
+    setCursorPosition(mapColorToCursorPosition(lastColorUpdated));
   }, [lastColorUpdated, axes]);
 
-  useEffect(() => {
-    redrawCanvas(
-      canvasRef.current,
-      lastColorUpdated,
-      axes,
-      sliderAxis,
-      scalesByAxis
-    );
-  }, [JSON.stringify(axesComponents), axes, sliderAxis]);
+  useEffect(redrawCanvasAfterThrottling, [
+    JSON.stringify(axesComponents),
+    axes,
+    sliderAxis
+  ]);
 
   return (
     <div className={styles.swatchContainer}>
@@ -203,7 +203,7 @@ export default function Swatch({
         <div className={styles.swatch}>
           <SwatchCursor
             cursorPosition={cursorPosition}
-            colorAtPosition={determineColorAtPosition(cursorPosition)}
+            colorAtPosition={mapCursorPositionToColor(cursorPosition)}
           />
           <canvas
             width={SWATCH_SIZE}
@@ -215,8 +215,8 @@ export default function Swatch({
         <input
           className={styles.slider}
           type="range"
-          min={_.demand(selectedColorSpace.componentsByName, sliderAxis).min}
-          max={_.demand(selectedColorSpace.componentsByName, sliderAxis).max}
+          min={demand(selectedColorSpace.componentsByName, sliderAxis).min}
+          max={demand(selectedColorSpace.componentsByName, sliderAxis).max}
           onChange={onChangeSlider}
           value={lastColorUpdated.get(sliderAxis)}
         />
