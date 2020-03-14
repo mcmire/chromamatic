@@ -114,36 +114,89 @@ export default function Swatch({
 
   function redrawCanvas() {
     benchmark.measuring("buildColor", "convertColor", "setPixelOn", () => {
-      const ctx = canvasRef.current.getContext("2d");
-      const imageData = ctx.createImageData(SWATCH_SIZE, SWATCH_SIZE);
-      const rgbConverter = colorSpaceRegistry[selectedColorSpace.name]["rgb"];
-
-      for (let y = 0; y < SWATCH_SIZE; y++) {
-        for (let x = 0; x < SWATCH_SIZE; x++) {
-          const newColor = benchmark.time("buildColor", () => {
-            return mapCursorPositionToColor(
-              { x, y },
-              {
-                finalColorSpace: demand(colorSpacesByName, "rgb"),
-                validate: false
-              }
-            );
-          });
-
-          benchmark.time("setPixelOn", () => {
-            setPixelOn(
-              imageData,
-              { x, y },
-              { ...newColor.toPlainObject(), a: 255 }
-            );
-          });
-        }
+      if (
+        (selectedColorSpace.name === "hsl" ||
+          selectedColorSpace.name === "hsluv") &&
+        sliderAxis === "h"
+      ) {
+        redrawCanvasAsCircle();
+      } else {
+        redrawCanvasAsSquare();
       }
-
-      ctx.putImageData(imageData, 0, 0);
     });
   }
   const redrawCanvasAfterThrottling = _.throttle(redrawCanvas, 100);
+
+  function redrawCanvasAsSquare() {
+    const ctx = canvasRef.current.getContext("2d");
+    const imageData = ctx.createImageData(SWATCH_SIZE, SWATCH_SIZE);
+    const rgb = demand(colorSpacesByName, "rgb");
+
+    for (let y = 0; y < SWATCH_SIZE; y++) {
+      for (let x = 0; x < SWATCH_SIZE; x++) {
+        const newColor = benchmark.time("buildColor", () => {
+          return mapCursorPositionToColor(
+            { x, y },
+            {
+              finalColorSpace: demand(colorSpacesByName, "rgb"),
+              validate: false
+            }
+          );
+        });
+
+        benchmark.time("setPixelOn", () => {
+          setPixelOn(
+            imageData,
+            { x, y },
+            { ...newColor.toPlainObject(), a: 255 }
+          );
+        });
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  }
+
+  function redrawCanvasAsCircle() {
+    const ctx = canvasRef.current.getContext("2d");
+    const imageData = ctx.createImageData(SWATCH_SIZE, SWATCH_SIZE);
+    const hComponent = demand(
+      lastColorUpdated.colorSpace.componentsByName,
+      "h"
+    );
+    const sComponent = demand(
+      lastColorUpdated.colorSpace.componentsByName,
+      "s"
+    );
+    const rgb = demand(colorSpacesByName, "rgb");
+
+    for (let h = hComponent.min; h <= hComponent.max; h++) {
+      for (let s = sComponent.min; s <= hComponent.max; s++) {
+        const x = Math.round(s * Math.sin(h));
+        const y = Math.round(s * Math.cos(h));
+
+        const newColor = benchmark.time("buildColor", () => {
+          return mapCursorPositionToColor(
+            { x, y },
+            {
+              finalColorSpace: rgb,
+              validate: false
+            }
+          );
+        });
+
+        benchmark.time("setPixelOn", () => {
+          setPixelOn(
+            imageData,
+            { x, y },
+            { ...newColor.toPlainObject(), a: 255 }
+          );
+        });
+      }
+    }
+
+    ctx.putImageData(imageData, 0, 0);
+  }
 
   const selectedColorSpace = lastColorUpdated.colorSpace;
   const scalesByAxis = buildScalesByAxis(
