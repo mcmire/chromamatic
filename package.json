@@ -13,8 +13,9 @@
     "reset.css": "^2.0.2"
   },
   "scripts": {
-    "start": "parcel start src/index.html",
-    "build": "parcel build src/index.html"
+    "start": "yarn clean && parcel start src/index.html",
+    "build": "yarn clean && parcel build src/index.html",
+    "clean": "rm -rf dist"
   },
   "devDependencies": {
     "autoprefixer": "^9.7.4",
