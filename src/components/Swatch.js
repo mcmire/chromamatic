@@ -42,7 +42,6 @@ function redrawCanvas(canvas, color, axes, sliderAxis, scalesByAxis) {
 
     for (let y = 0; y < SWATCH_SIZE; y++) {
       for (let x = 0; x < SWATCH_SIZE; x++) {
-        // ~3.3 ms (with conversion ~1.9 ms)
         const newColor = benchmark.time("buildColor", () => {
           return color
             .cloneWith(
@@ -55,7 +54,6 @@ function redrawCanvas(canvas, color, axes, sliderAxis, scalesByAxis) {
             .convertTo("rgb");
         });
 
-        // ~0.4 ms
         benchmark.time("setPixelOn", () => {
           setPixelOn(
             imageData,
@@ -63,33 +61,6 @@ function redrawCanvas(canvas, color, axes, sliderAxis, scalesByAxis) {
             { ...newColor.toPlainObject(), a: 255 }
           );
         });
-
-        /*
-        const newColor = benchmark.time("buildColor", () => {
-          if (color.colorSpace.name === "rgb") {
-            return [color.get("r"), color.get("g"), color.get("b")];
-          } else {
-            return rgbConverter([
-              color.get(sliderAxis),
-              x * scalesByAxis.x.swatchToComponent,
-              y * scalesByAxis.y.swatchToComponent
-            ]);
-          }
-        });
-
-        benchmark.time("setPixelOn", () => {
-          setPixelOn(
-            imageData,
-            { x, y },
-            {
-              [sliderAxis]: newColor[0],
-              [axes.x]: newColor[1],
-              [axes.y]: newColor[2],
-              a: 255
-            }
-          );
-        });
-        */
       }
     }
 

@@ -32,10 +32,6 @@ export default class ColorSpace {
   }
 
   validateColorComponents(givenComponents) {
-    //if (!_.isPlainObject(givenComponents)) {
-    //throw new Error("Given color components should be an object");
-    //}
-
     this.components.forEach(component => {
       const value = givenComponents[component.name];
 

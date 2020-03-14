@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import _ from "../vendor/lodash";
 
 import colorSpacesByName, { COLOR_SPACE_NAMES } from "../lib/colorSpacesByName";
-import ColorSpaceGroupIndicator from "./ColorSpaceGroupIndicator";
 import ColorSpaceGroup from "./ColorSpaceGroup";
 import Swatch from "./Swatch";
 
@@ -27,8 +26,6 @@ function App() {
   }
 
   function onColorComponentUpdate(color, component, newComponentValue) {
-    //console.log("onColorComponentUpdate");
-
     const newColor = color.cloneWith({ [component.name]: newComponentValue });
     _onColorUpdate(newColor, {
       representation: { name: "tuple" },
@@ -126,7 +123,6 @@ function App() {
   }
 
   function onSelectColorSpace(colorSpace) {
-    //setSelectedColorSpace(colorSpace);
     onColorUpdate(_.demand(colorsByColorSpaceName, colorSpace.name));
     setLastHighlightedColorSpace(colorSpace);
   }
