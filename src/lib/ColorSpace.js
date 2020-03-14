@@ -2,9 +2,11 @@ import _ from "../vendor/lodash";
 import colorSpaceRegistry from "color-space";
 
 import { InvalidColorError } from "./errors";
+import { coerceToNumber } from "./utils";
 import ColorComponent from "./ColorComponent";
 import ColorRepresentation from "./ColorRepresentation";
 import Color from "./Color";
+import benchmark from "./benchmark";
 
 export default class ColorSpace {
   constructor({ name, components, representations }) {
@@ -42,7 +44,7 @@ export default class ColorSpace {
         error.componentName = component.name;
         return error;
       }
-      const parsedValue = parseFloat(value);
+      const parsedValue = coerceToNumber(value);
 
       if (isNaN(parsedValue)) {
         const error = new InvalidColorError(
@@ -82,11 +84,15 @@ export default class ColorSpace {
   }
 
   convertColor(color) {
-    const sourceColorSpace = colorSpaceRegistry[color.colorSpace.name];
-    const targetColorSpace = sourceColorSpace[this.name];
-    const newValues = this._normalizeValues(targetColorSpace(color.values));
+    const newNormalizedColor = benchmark.time("convertColor", () => {
+      const sourceColorSpace = colorSpaceRegistry[color.colorSpace.name];
+      const targetColorSpace = sourceColorSpace[this.name];
+      const newColor = targetColorSpace(color.values);
+      const newValues = this._normalizeValues(newColor);
+      return this.buildColor(newValues);
+    });
 
-    return this.buildColor(newValues);
+    return newNormalizedColor;
   }
 
   _normalizeData(data) {

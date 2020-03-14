@@ -1,9 +1,12 @@
 import _ from "../vendor/lodash";
 import React, { useEffect, useState, useRef } from "react";
+import colorSpaceRegistry from "color-space";
 
-import styles from "./Swatch.css";
+import benchmark from "../lib/benchmark";
 import SwatchAxesSelectors from "./SwatchAxesSelectors";
 import SwatchCursor from "./SwatchCursor";
+
+import styles from "./Swatch.css";
 
 const SWATCH_SIZE = 200;
 const RGB_TO_SWATCH_RATIO = SWATCH_SIZE / 255;
@@ -32,23 +35,66 @@ function setPixelOn(imageData, { x, y }, { r, g, b, a }) {
 }
 
 function redrawCanvas(canvas, color, axes, sliderAxis, scalesByAxis) {
-  const t1 = new Date();
-  const ctx = canvas.getContext("2d");
-  const imageData = ctx.createImageData(SWATCH_SIZE, SWATCH_SIZE);
-  for (let y = 0; y < SWATCH_SIZE; y++) {
-    for (let x = 0; x < SWATCH_SIZE; x++) {
-      const newColor = color
-        .cloneWith({
-          [axes.x]: x * scalesByAxis.x.swatchToComponent,
-          [axes.y]: y * scalesByAxis.y.swatchToComponent
-        })
-        .convertTo("rgb");
-      setPixelOn(imageData, { x, y }, { ...newColor.toPlainObject(), a: 255 });
+  benchmark.measuring("buildColor", "convertColor", "setPixelOn", () => {
+    const ctx = canvas.getContext("2d");
+    const imageData = ctx.createImageData(SWATCH_SIZE, SWATCH_SIZE);
+    const rgbConverter = colorSpaceRegistry[color.colorSpace.name]["rgb"];
+
+    for (let y = 0; y < SWATCH_SIZE; y++) {
+      for (let x = 0; x < SWATCH_SIZE; x++) {
+        // ~5 ms (with conversion ~3 ms)
+        const newColor = benchmark.time("buildColor", () => {
+          return color
+            .cloneWith(
+              {
+                [axes.x]: x * scalesByAxis.x.swatchToComponent,
+                [axes.y]: y * scalesByAxis.y.swatchToComponent
+              },
+              { validate: false }
+            )
+            .convertTo("rgb");
+        });
+
+        // ~0.4 ms
+        benchmark.time("setPixelOn", () => {
+          setPixelOn(
+            imageData,
+            { x, y },
+            { ...newColor.toPlainObject(), a: 255 }
+          );
+        });
+
+        /*
+        const newColor = benchmark.time("buildColor", () => {
+          if (color.colorSpace.name === "rgb") {
+            return [color.get("r"), color.get("g"), color.get("b")];
+          } else {
+            return rgbConverter([
+              color.get(sliderAxis),
+              x * scalesByAxis.x.swatchToComponent,
+              y * scalesByAxis.y.swatchToComponent
+            ]);
+          }
+        });
+
+        benchmark.time("setPixelOn", () => {
+          setPixelOn(
+            imageData,
+            { x, y },
+            {
+              [sliderAxis]: newColor[0],
+              [axes.x]: newColor[1],
+              [axes.y]: newColor[2],
+              a: 255
+            }
+          );
+        });
+        */
+      }
     }
-  }
-  const t2 = new Date();
-  console.log("Time elapsed", `${t2 - t1}ms`);
-  ctx.putImageData(imageData, 0, 0);
+
+    ctx.putImageData(imageData, 0, 0);
+  });
 }
 const redrawCanvasAfterThrottling = _.throttle(redrawCanvas, 100);
 

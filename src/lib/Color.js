@@ -4,16 +4,19 @@ import {
   stringifyColor,
   calculateRelativeLuminance
 } from "./colorUtils";
+import { coerceToNumber } from "./utils";
 
-import StrictMap from "./StrictMap";
 import colorSpacesByName from "./colorSpacesByName";
 
 export default class Color {
-  constructor(colorSpace, components) {
+  constructor(colorSpace, components, { validate = true } = {}) {
     this.colorSpace = colorSpace;
-    this.colorSpace.validateColorComponents(components);
 
-    this.components = new StrictMap(components);
+    if (validate) {
+      this.colorSpace.validateColorComponents(components);
+    }
+
+    this.components = components;
   }
 
   get name() {
@@ -21,9 +24,9 @@ export default class Color {
   }
 
   get values() {
-    return this.colorSpace.componentNames
-      .map(name => this.get(name))
-      .map(value => parseFloat(value, 10));
+    return this.colorSpace.componentNames.map(name =>
+      coerceToNumber(this.get(name))
+    );
   }
 
   get textColor() {
@@ -31,14 +34,18 @@ export default class Color {
   }
 
   get(componentName) {
-    return this.components.fetch(componentName);
+    return _.demand(this.components, componentName);
   }
 
-  cloneWith(updatedComponents) {
-    return new this.constructor(this.colorSpace, {
-      ...this.toPlainObject(),
-      ...updatedComponents
-    });
+  cloneWith(updatedComponents, { validate = true } = {}) {
+    return new this.constructor(
+      this.colorSpace,
+      {
+        ...this.toPlainObject(),
+        ...updatedComponents
+      },
+      { validate }
+    );
   }
 
   convertTo(otherColorSpace) {
@@ -64,7 +71,7 @@ export default class Color {
   }
 
   toPlainObject() {
-    return this.components.toPlainObject();
+    return this.components;
   }
 
   _calculateRelativeLuminance() {
