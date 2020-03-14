@@ -42,7 +42,7 @@ function redrawCanvas(canvas, color, axes, sliderAxis, scalesByAxis) {
 
     for (let y = 0; y < SWATCH_SIZE; y++) {
       for (let x = 0; x < SWATCH_SIZE; x++) {
-        // ~5 ms (with conversion ~3 ms)
+        // ~3.3 ms (with conversion ~1.9 ms)
         const newColor = benchmark.time("buildColor", () => {
           return color
             .cloneWith(
@@ -205,7 +205,7 @@ export default function Swatch({
   }, [mouseIsDown]);
 
   useEffect(() => {
-    redrawCanvasAfterThrottling(
+    redrawCanvas(
       canvasRef.current,
       lastColorUpdated,
       axes,

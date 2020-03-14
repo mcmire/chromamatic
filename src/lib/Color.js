@@ -4,7 +4,7 @@ import {
   stringifyColor,
   calculateRelativeLuminance
 } from "./colorUtils";
-import { coerceToNumber } from "./utils";
+import { coerceToNumber, demand } from "./utils";
 
 import colorSpacesByName from "./colorSpacesByName";
 
@@ -34,7 +34,7 @@ export default class Color {
   }
 
   get(componentName) {
-    return _.demand(this.components, componentName);
+    return demand(this.components, componentName);
   }
 
   cloneWith(updatedComponents, { validate = true } = {}) {
@@ -50,7 +50,7 @@ export default class Color {
 
   convertTo(otherColorSpace) {
     if (typeof otherColorSpace === "string") {
-      otherColorSpace = _.demand(colorSpacesByName, otherColorSpace);
+      otherColorSpace = demand(colorSpacesByName, otherColorSpace);
     }
 
     if (this.colorSpace.name === otherColorSpace.name) {

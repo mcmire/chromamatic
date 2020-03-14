@@ -2,7 +2,7 @@ import _ from "../vendor/lodash";
 import colorSpaceRegistry from "color-space";
 
 import { InvalidColorError } from "./errors";
-import { coerceToNumber } from "./utils";
+import { coerceToNumber, isPlainObject, toObject, zip } from "./utils";
 import ColorComponent from "./ColorComponent";
 import ColorRepresentation from "./ColorRepresentation";
 import Color from "./Color";
@@ -32,9 +32,9 @@ export default class ColorSpace {
   }
 
   validateColorComponents(givenComponents) {
-    if (!_.isPlainObject(givenComponents)) {
-      throw new Error("Given color components should be an object");
-    }
+    //if (!_.isPlainObject(givenComponents)) {
+    //throw new Error("Given color components should be an object");
+    //}
 
     this.components.forEach(component => {
       const value = givenComponents[component.name];
@@ -75,9 +75,9 @@ export default class ColorSpace {
   }
 
   buildColor(valuesOrData, { normalize = false } = {}) {
-    const data = _.isPlainObject(valuesOrData)
+    const data = isPlainObject(valuesOrData)
       ? valuesOrData
-      : _.fromPairs(_.zip(this.componentNames, valuesOrData));
+      : toObject(zip(this.componentNames, valuesOrData));
     const normalizedData = normalize ? this._normalizeData(data) : data;
 
     return new Color(this, normalizedData);
@@ -110,7 +110,7 @@ export default class ColorSpace {
   }
 
   _normalizeValues(values) {
-    return _.zip(values, this.components).map(([value, component]) => {
+    return zip(values, this.components).map(([value, component]) => {
       return component.normalize(value);
     });
   }
