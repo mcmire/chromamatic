@@ -152,8 +152,9 @@ export default function Swatch({
 
   const sliderAxis = _.difference(
     selectedColorSpace.componentNames,
-    _.values(axes)
+    Object.values(axes)
   )[0];
+  const axesComponents = _.pick(lastColorUpdated.toPlainObject(), [sliderAxis]);
 
   useEffect(() => {
     document.body.addEventListener("mouseup", onMouseUp);
@@ -176,6 +177,12 @@ export default function Swatch({
   }, [mouseIsDown]);
 
   useEffect(() => {
+    setCursorPosition(
+      determineCursorPositionFrom(lastColorUpdated, axes, scalesByAxis)
+    );
+  }, [lastColorUpdated, axes]);
+
+  useEffect(() => {
     redrawCanvas(
       canvasRef.current,
       lastColorUpdated,
@@ -183,10 +190,7 @@ export default function Swatch({
       sliderAxis,
       scalesByAxis
     );
-    setCursorPosition(
-      determineCursorPositionFrom(lastColorUpdated, axes, scalesByAxis)
-    );
-  }, [lastColorUpdated, axes]);
+  }, [JSON.stringify(axesComponents), axes, sliderAxis]);
 
   return (
     <div className={styles.swatchContainer}>
