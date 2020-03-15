@@ -1,16 +1,18 @@
 # Chromamatic
 
+<img src="docs/screenshot.png" />
+
 This is a color chooser tool
-that not only supports converting colors between RGB, HSL, and hex,
-but also the [HSLuv][hsluv] color space.
-HSLuv acts like HSL,
-except its lightness component is more true to how we perceive light.
-
-At the moment, it looks like this:
-
-<img src="docs/screenshot-2020-03-07.png" height="350" />
+that not only supports manipulating colors in RGB, HSL, and hex,
+but also [HSLuv][hsluv].
+HSLuv is a color space that acts like HSL,
+except its lightness component is more true to how we see light,
+so it is more useful than HSL for spacing out colors with different hues
+at the same perceived lightness.
 
 [hsluv]: https://www.hsluv.org/
+
+**[Try it out →](https://chromamatic.now.sh/)**
 
 ## Development
 
