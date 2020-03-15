@@ -1,5 +1,10 @@
 .app {
   display: flex;
+  padding: 1rem;
+  background: white;
+  border: 1px solid rgba(0, 0, 0, 0.7);
+  width: fit-content;
+  height: fit-content;
 }
 
 .column {

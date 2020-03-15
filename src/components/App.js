@@ -91,6 +91,10 @@ function App() {
     setColorFormsByColorSpaceName(newColorFormsByColorSpaceName);
 
     setLastColorUpdated(selectedColor);
+
+    document.body.style.backgroundColor = selectedColor
+      .convertTo("rgb")
+      .toFormattedString({ hex: true });
   }
 
   function onColorEditorLeave(selectedColorForm) {
