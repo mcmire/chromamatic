@@ -67,7 +67,13 @@ export default class ColorSpace {
   }
 
   black() {
-    return this.buildColor(_.times(this.components.length, _.constant(0)));
+    const minValues = this.components.map(component => component.min);
+    return this.buildColor(minValues);
+  }
+
+  white() {
+    const maxValues = this.components.map(component => component.max);
+    return this.buildColor(maxValues);
   }
 
   buildColor(valuesOrData, { normalize = false } = {}) {

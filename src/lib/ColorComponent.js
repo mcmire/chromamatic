@@ -41,6 +41,14 @@ export default class ColorComponent {
     }
   }
 
+  isWithinRange(value) {
+    return (
+      !isNaN(value) &&
+      (this.min == null || value >= this.min) &&
+      (this.max == null || value <= this.max)
+    );
+  }
+
   round(value) {
     if (this.precision != null) {
       return roundNumber(value, this.precision);
