@@ -2,7 +2,7 @@ import { parseColor } from "./colorUtils";
 import ColorForm from "./ColorForm";
 import { InvalidColorStringError } from "./errors";
 
-const HSLUV_REGEXP = /^hsluv\((\d(?:\.\d+)?)+, (\d+(?:\.\d+)?)%, (\d+(?:\.\d+)?)%\)$/;
+const HSLUV_REGEXP = /^hsluv\((\d+(?:\.\d+)?)+, (\d+(?:\.\d+)?)%, (\d+(?:\.\d+)?)%\)$/;
 
 export default class ColorStringForm extends ColorForm {
   constructor(colorSpace, representation, data) {
