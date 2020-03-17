@@ -1,6 +1,6 @@
 # Chromamatic
 
-<img src="docs/screenshot.png" />
+![screenshot](./docs/screenshot.png)
 
 This is a color chooser tool
 that not only supports manipulating colors in RGB, HSL, and hex,
