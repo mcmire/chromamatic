@@ -38,7 +38,7 @@ export function demand(object, key) {
     return object[key];
   } else {
     throw new Error(
-      `No such key path in object: ${path}; keys: ${JSON.stringify(
+      `No such key in object: ${key}; keys: ${JSON.stringify(
         Object.keys(object)
       )}`
     );
