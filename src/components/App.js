@@ -205,7 +205,10 @@ function App() {
     initialState.axesByColorSpaceName = {
       rgb: { x: "g", y: "b" },
       hsl: { x: "h", y: "s" },
-      hsluv: { x: "h", y: "s" }
+      hsluv: { x: "h", y: "s" },
+      lchuv: { x: "h", y: "c" },
+      luv: { x: "u", y: "v" },
+      xyz: { x: "x", y: "y" }
     };
 
     return initialState;
