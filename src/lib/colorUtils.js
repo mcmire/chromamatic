@@ -18,7 +18,10 @@ export function calculateRelativeLuminance(r, g, b) {
 }
 
 export function parseColor(colorSpace, input) {
-  if (/^#/.test(input) && !/^#[A-Fa-f0-9]{3}|#[A-Fa-f0-9]{6}$/.test(input)) {
+  if (
+    /^#/.test(input) &&
+    !/^(?:#[A-Fa-f0-9]{3}|#[A-Fa-f0-9]{6})$/.test(input)
+  ) {
     throw InvalidColorStringError.create(colorSpace, input);
   } else {
     const parsedColor = colorParse(input);
