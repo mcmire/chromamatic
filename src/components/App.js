@@ -82,10 +82,18 @@ function App() {
 
     const newColorFormsByColorSpaceName = _updateColorFormsByColorSpaceName(
       (colorSpaceName, representationName, colorForm) => {
-        return colorForm.cloneFromColor(
-          newColorsByColorSpaceName[colorSpaceName],
-          { normalize }
-        );
+        if (
+          selectedColorForm.colorSpace != null &&
+          colorSpaceName === selectedColorForm.colorSpace.name &&
+          representationName === selectedColorForm.representation.name
+        ) {
+          return selectedColorForm;
+        } else {
+          return colorForm.cloneFromColor(
+            newColorsByColorSpaceName[colorSpaceName],
+            { normalize }
+          );
+        }
       }
     );
     setColorFormsByColorSpaceName(newColorFormsByColorSpaceName);
