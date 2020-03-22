@@ -135,7 +135,17 @@ function App() {
   }
 
   function onSelectColorSpace(colorSpace) {
-    onColorUpdate(_.demand(colorsByColorSpaceName, colorSpace.name));
+    // TODO: This should just set the last selected color space, not the last
+    // selected color — we don't want random things changing
+    const color = _.demand(colorsByColorSpaceName, colorSpace.name);
+    onColorUpdate(color);
+    setLastHighlightedColorSpace(colorSpace);
+  }
+
+  function onFocusColorField(colorForm) {
+    const colorSpace = colorForm.colorSpace;
+    const color = _.demand(colorsByColorSpaceName, colorSpace.name);
+    setLastColorUpdated(color);
     setLastHighlightedColorSpace(colorSpace);
   }
 
@@ -307,6 +317,7 @@ function App() {
         onMouseOverColorSpaceName={onMouseOverColorSpaceName}
         onMouseOutColorSpaceName={onMouseOutColorSpaceName}
         onSelectColorSpace={onSelectColorSpace}
+        onFocusColorField={onFocusColorField}
         isHighlighted={isHighlighted}
         isSelected={isSelected}
       />

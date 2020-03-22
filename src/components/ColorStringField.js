@@ -10,7 +10,7 @@ export default function ColorStringField({
   onLeave
 }) {
   function _onFocus(event) {
-    onFocus(colorForm.colorSpace);
+    onFocus(colorForm);
   }
 
   function onChange(event) {

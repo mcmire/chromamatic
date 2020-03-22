@@ -57,6 +57,7 @@ export default function ColorSpaceGroup({
   onMouseOverColorSpaceName,
   onMouseOutColorSpaceName,
   onSelectColorSpace,
+  onFocusColorField,
   isHighlighted,
   isSelected
 }) {
@@ -83,7 +84,7 @@ export default function ColorSpaceGroup({
         <ColorTupleFieldGroup
           key={representationName}
           colorForm={colorForm}
-          onFieldFocus={onSelectColorSpace}
+          onFieldFocus={onFocusColorField}
           onFieldUpdate={onColorTupleComponentFieldUpdate}
           onFieldLeave={onColorEditorLeave}
         />
@@ -93,7 +94,7 @@ export default function ColorSpaceGroup({
         <ColorStringFieldGroup
           key={representationName}
           colorForm={colorForm}
-          onFieldFocus={onSelectColorSpace}
+          onFieldFocus={onFocusColorField}
           onFieldUpdate={onColorStringFieldUpdate}
           onFieldLeave={onColorEditorLeave}
         />
