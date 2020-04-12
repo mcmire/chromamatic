@@ -4,6 +4,8 @@ import React from "react";
 import ColorTupleComponentField from "./ColorTupleComponentField";
 import ColorStringField from "./ColorStringField";
 
+import lockOpenPath from "../assets/lock-open-outline.svg";
+import lockClosedPath from "../assets/lock-closed.svg";
 import styles from "./ColorSpaceGroup.css";
 
 function ColorTupleFieldGroup({
@@ -58,18 +60,25 @@ export default function ColorSpaceGroup({
   onMouseOutColorSpaceName,
   onSelectColorSpace,
   onFocusColorField,
+  updateLockedColorSpace,
   isHighlighted,
-  isSelected
+  isSelected,
+  isLocked
 }) {
-  function onMouseOver(event) {
+  function onLockIconClick(event) {
+    event.preventDefault();
+    updateLockedColorSpace(colorSpace);
+  }
+
+  function onColorSpaceNameMouseOver(event) {
     onMouseOverColorSpaceName(colorSpace);
   }
 
-  function onMouseOut(event) {
+  function onColorSpaceNameMouseOut(event) {
     onMouseOutColorSpaceName(colorSpace);
   }
 
-  function onClick(event) {
+  function onColorSpaceNameClick(event) {
     event.preventDefault();
     onSelectColorSpace(colorSpace);
   }
@@ -119,11 +128,20 @@ export default function ColorSpaceGroup({
   return (
     <div className={classes.join(" ")}>
       <a
+        className={styles.lockIcon}
+        href="#"
+        onClick={onLockIconClick}
+        title="Lock
+        updates to this color space"
+      >
+        <img src={isLocked ? lockClosedPath : lockOpenPath} />
+      </a>
+      <a
         href="#"
         className={styles.colorSpaceName}
-        onMouseOver={onMouseOver}
-        onMouseOut={onMouseOut}
-        onClick={onClick}
+        onMouseOver={onColorSpaceNameMouseOver}
+        onMouseOut={onColorSpaceNameMouseOut}
+        onClick={onColorSpaceNameClick}
       >
         {colorSpace.name}
       </a>

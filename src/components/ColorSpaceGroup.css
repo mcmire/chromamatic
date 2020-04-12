@@ -15,11 +15,26 @@
 .colorSpaceGroupSelected {
 }
 
+.lockIcon {
+  margin-right: 0.5em;
+  vertical-align: middle;
+  opacity: 0.5;
+}
+
+.lockIcon > img {
+  height: 1em;
+}
+
+.lockIcon:hover {
+  opacity: 1;
+}
+
 .colorSpaceName {
   composes: column from "./App.css";
 
   font-weight: bold;
   display: inline-block;
+  vertical-align: middle;
   width: 7em;
   color: hsl(216, 90%, 45%);
   text-decoration: none;

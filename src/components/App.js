@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import _ from "../vendor/lodash";
 
 import colorSpacesByName, { COLOR_SPACE_NAMES } from "../lib/colorSpacesByName";
+import { demand } from "../lib/utils";
 import ColorSpaceGroup from "./ColorSpaceGroup";
 import Swatch from "./Swatch";
 
@@ -114,13 +115,35 @@ function App() {
     const allColorFormsAreValid = _.every(allColorForms, "isValid");
 
     if (allColorFormsAreValid) {
-      const normalizedColor = selectedColorForm.buildColor({ normalize: true });
-      // TODO: This may not even be necessary
-      const normalizedColorForm = selectedColorForm.cloneFromColor(
-        normalizedColor,
-        { normalize: true }
-      );
-      _onColorUpdate(normalizedColor, normalizedColorForm, { normalize: true });
+      if (lockedColorSpace) {
+        const color = demand(colorsByColorSpaceName, lockedColorSpace.name);
+        _onColorUpdate(color, {
+          representation: { name: "tuple" },
+          toSerializable: () => {
+            return newColor.toPlainObject();
+          }
+        });
+      } else {
+        const normalizedColor = selectedColorForm.buildColor({
+          normalize: true
+        });
+        // TODO: This may not even be necessary
+        const normalizedColorForm = selectedColorForm.cloneFromColor(
+          normalizedColor,
+          { normalize: true }
+        );
+        _onColorUpdate(normalizedColor, normalizedColorForm, {
+          normalize: true
+        });
+      }
+    }
+  }
+
+  function updateLockedColorSpace(colorSpace) {
+    if (lockedColorSpace === colorSpace) {
+      setLockedColorSpace(null);
+    } else {
+      setLockedColorSpace(colorSpace);
     }
   }
 
@@ -229,6 +252,8 @@ function App() {
       xyz: { x: "x", y: "y" }
     };
 
+    initialState.lockedColorSpace = null;
+
     return initialState;
   }
 
@@ -240,7 +265,8 @@ function App() {
           colorSpaceName: lastColorUpdated.colorSpace.name,
           data: lastColorUpdated.toPlainObject()
         },
-        axesByColorSpaceName: axesByColorSpaceName
+        axesByColorSpaceName: axesByColorSpaceName,
+        lockedColorSpaceName: lockedColorSpace && lockedColorSpace.name
       })
     );
   }
@@ -252,8 +278,13 @@ function App() {
       try {
         const {
           color: { colorSpaceName, data },
-          axesByColorSpaceName
+          axesByColorSpaceName,
+          lockedColorSpaceName
         } = JSON.parse(saveData);
+
+        if (lockedColorSpaceName != null) {
+          setLockedColorSpace(demand(colorSpacesByName, lockedColorSpaceName));
+        }
 
         const newColor = colorsByColorSpaceName[colorSpaceName].cloneWith(data);
         _onColorUpdate(newColor, {
@@ -287,6 +318,9 @@ function App() {
   const [axesByColorSpaceName, setAxesByColorSpaceName] = useState(
     initialState.axesByColorSpaceName
   );
+  const [lockedColorSpace, setLockedColorSpace] = useState(
+    initialState.lockedColorSpace
+  );
   const [highlightedColorSpace, setHighlightedColorSpace] = useState(null);
   const [lastHighlightedColorSpace, setLastHighlightedColorSpace] = useState(
     null
@@ -294,7 +328,11 @@ function App() {
   const selectedColorSpace = lastColorUpdated.colorSpace;
 
   useEffect(_loadSaveData, []);
-  useEffect(_persistSaveData, [lastColorUpdated, axesByColorSpaceName]);
+  useEffect(_persistSaveData, [
+    lastColorUpdated,
+    axesByColorSpaceName,
+    lockedColorSpace
+  ]);
 
   const colorSpaceGroups = _.map(COLOR_SPACE_NAMES, (colorSpaceName, index) => {
     const colorSpace = _.demand(colorSpacesByName, colorSpaceName);
@@ -306,6 +344,8 @@ function App() {
       highlightedColorSpace != null &&
       highlightedColorSpace.name === colorSpaceName;
     const isSelected = colorSpace.name === selectedColorSpace.name;
+    const isLocked =
+      lockedColorSpace && colorSpace.name === lockedColorSpace.name;
     return (
       <ColorSpaceGroup
         key={index}
@@ -318,8 +358,10 @@ function App() {
         onMouseOutColorSpaceName={onMouseOutColorSpaceName}
         onSelectColorSpace={onSelectColorSpace}
         onFocusColorField={onFocusColorField}
+        updateLockedColorSpace={updateLockedColorSpace}
         isHighlighted={isHighlighted}
         isSelected={isSelected}
+        isLocked={isLocked}
       />
     );
   });
