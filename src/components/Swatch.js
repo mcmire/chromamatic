@@ -38,6 +38,10 @@ function setPixelOn(imageData, { x, y }, { r, g, b, a }) {
   imageData.data[index + 3] = a;
 }
 
+function determineGraphType(colorSpace, axes) {
+  return axes.x === "h" || axes.y === "h" ? "polar" : "cartesian";
+}
+
 export default function Swatch({
   colorSpacesByName,
   colorsByColorSpaceName,
@@ -101,10 +105,12 @@ export default function Swatch({
         {}
       );
     } else if (graphType === "polar") {
+      const otherComponentName = axes.x === "h" ? axes.y : axes.x;
       const otherComponent = demand(
         lastColorUpdated.colorSpace.componentsByName,
-        axes.y
+        otherComponentName
       );
+
       const otherComponentRange = otherComponent.max - otherComponent.min;
       const rgb = color.convertTo("rgb");
       const h = color.get("h");
@@ -113,7 +119,8 @@ export default function Swatch({
       const r = o * (R / otherComponentRange);
       const x = r * Math.cos(theta) + R;
       const y = SWATCH_SIZE - (r * Math.sin(theta) + R);
-      return { x, y };
+      //return axes.x === "h" ? { x: x, y: y } : { x: y, y: x };
+      return { x: x, y: y };
     } else {
       throw new Error(`Unknown graph type ${graphType}`);
     }
@@ -134,9 +141,10 @@ export default function Swatch({
         )
       );
     } else if (graphType === "polar") {
+      const otherComponentName = axes.x === "h" ? axes.y : axes.x;
       const otherComponent = demand(
         lastColorUpdated.colorSpace.componentsByName,
-        axes.y
+        otherComponentName
       );
       const otherComponentRange = otherComponent.max - otherComponent.min;
 
@@ -153,7 +161,7 @@ export default function Swatch({
 
       const colorAttributes = {
         h: h,
-        [axes.y]: o,
+        [otherComponentName]: o,
         [sliderAxis]: lastColorUpdated.get(sliderAxis)
       };
       const isWithinComponentRange = _.every(colorAttributes, (value, name) => {
@@ -210,12 +218,7 @@ export default function Swatch({
   const redrawCanvasAfterThrottling = _.throttle(redrawCanvas, 100);
 
   const selectedColorSpace = lastColorUpdated.colorSpace;
-  const graphType =
-    (selectedColorSpace.name === "hsl" ||
-      selectedColorSpace.name === "hsluv") &&
-    axes.x === "h"
-      ? "polar"
-      : "cartesian";
+  const graphType = determineGraphType(selectedColorSpace, axes);
   const scalesByAxis = buildScalesByAxis(
     axes,
     selectedColorSpace.componentsByName

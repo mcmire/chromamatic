@@ -116,7 +116,7 @@ function App() {
 
     if (allColorFormsAreValid) {
       if (lockedColorSpace) {
-        const color = demand(colorsByColorSpaceName, lockedColorSpace.name);
+        const color = _.demand(colorsByColorSpaceName, lockedColorSpace.name);
         _onColorUpdate(color, {
           representation: { name: "tuple" },
           toSerializable: () => {
@@ -247,6 +247,7 @@ function App() {
       rgb: { x: "g", y: "b" },
       hsl: { x: "h", y: "s" },
       hsluv: { x: "h", y: "s" },
+      hpluv: { x: "h", y: "p" },
       lchuv: { x: "h", y: "c" },
       luv: { x: "u", y: "v" },
       xyz: { x: "x", y: "y" }

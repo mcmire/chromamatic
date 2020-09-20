@@ -1,7 +1,15 @@
 import colorSpaceRegistry from "color-space";
 import ColorSpace from "./ColorSpace";
 
-export const COLOR_SPACE_NAMES = ["rgb", "hsl", "hsluv", "lchuv", "luv", "xyz"];
+export const COLOR_SPACE_NAMES = [
+  "rgb",
+  "hsl",
+  "hsluv",
+  "hpluv",
+  "lchuv",
+  "luv",
+  "xyz"
+];
 
 const colorSpacesByName = {
   rgb: new ColorSpace({
@@ -94,6 +102,38 @@ const colorSpacesByName = {
       }
     ],
     representations: ["tuple", "cssString"]
+  }),
+  hpluv: new ColorSpace({
+    name: "hpluv",
+    components: [
+      {
+        name: "h",
+        step: 1,
+        min: colorSpaceRegistry.hpluv.min[0],
+        max: colorSpaceRegistry.hpluv.max[0],
+        suffix: "°",
+        precision: 1
+      },
+      {
+        name: "p",
+        step: 1,
+        min: colorSpaceRegistry.hpluv.min[1],
+        max: colorSpaceRegistry.hpluv.max[1],
+        //suffix: "%",
+        //cssSuffix: "%",
+        precision: 1
+      },
+      {
+        name: "l",
+        step: 1,
+        min: colorSpaceRegistry.hpluv.min[2],
+        max: colorSpaceRegistry.hpluv.max[2],
+        suffix: "%",
+        cssSuffix: "%",
+        precision: 1
+      }
+    ],
+    representations: ["tuple"]
   }),
   lchuv: new ColorSpace({
     name: "lchuv",
