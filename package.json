@@ -20,7 +20,7 @@
   "devDependencies": {
     "acorn": "^6.4.1",
     "autoprefixer": "^9.7.4",
-    "minimist": "^1.2.2",
+    "minimist": "^1.2.6",
     "parcel": "^1.12.4",
     "postcss-modules": "^1.5.0",
     "prettier": "^1.19.1"
